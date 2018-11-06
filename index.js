@@ -1,6 +1,6 @@
-var builder = require('./builder');
-var pipelines = require('./pipelines.js');
-var stages = require('./stages.js');
+var builder = require('./lib/builder');
+var pipelines = require('./lib/pipelines.js');
+var stages = require('./lib/stages.js');
 
 module.exports = {
   pipelines: pipelines,

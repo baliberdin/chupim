@@ -1,5 +1,5 @@
 const test = require('tape');
-const chupim = require('../chupim');
+const chupim = require('../index.js');
 
 // Registering stages for test
 chupim.stages.register('test','stage1', async (c) => {
