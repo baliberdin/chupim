@@ -1,0 +1,33 @@
+{
+  "name": "chupim",
+  "version": "0.0.1",
+  "description": "A pipeline builder to compose APIs",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "tap-spec": "^5.0.0",
+    "tape": "^4.9.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "tape tests/**/*.js | tap-spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/baliberdin/chupim.git"
+  },
+  "keywords": [
+    "Pipeline",
+    "Search",
+    "API",
+    "microservices"
+  ],
+  "author": "Allan Baliberdin <a.baliberdin@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/baliberdin/chupim/issues"
+  },
+  "homepage": "https://github.com/baliberdin/chupim#readme"
+}
