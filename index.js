@@ -15,7 +15,7 @@ module.exports = {
         params: {},
         metadata:{
           stages_info:[], 
-          stage:0
+          executed_stages:0
         }
       }
 		};
