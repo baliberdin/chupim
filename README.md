@@ -14,7 +14,7 @@ Let's see some examples of how to use chupim on a simple pipeline to transform t
 
 ```javascript
 // Import Chupim module
-const chupim = require('chupim');
+const chupim = require('./');
 
 // Register new stage
 chupim.stages.register('myPackage','myLowercaseStage', async (context) => {
@@ -30,7 +30,7 @@ chupim.stages.register('myPackage','mySplitParagraphStage', async (context) => {
 });
 
 // Register a new component
-const component = chupim.registerComponent({
+const pipeline = chupim.registerComponent({
   id: 'parse_text_test',
   name:'Parse Text Test',
   stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
@@ -38,6 +38,8 @@ const component = chupim.registerComponent({
 
 // Create an empty context
 var context = chupim.createContext();
+// Set chupim to debug mode. It will keep metadata information on context object.
+context._chupim_.params.debug = true;
 
 // Put the text on context
 context.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "+
@@ -47,8 +49,6 @@ context.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "+
   "in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint "+
   "occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-// Run component pipeline function and then log result into console
-// Result is the context object modified by pipeline
 pipeline.fn(context).then( result => {
   console.log(result);
 });
