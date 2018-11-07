@@ -48,7 +48,7 @@ chupim.stages.register('myPackage','mySplitParagraphStage', async (context) => {
 });
 
 // Register a new component
-const pipeline = chupim.registerComponent({
+const component = chupim.registerComponent({
   id: 'parse_text_test',
   name:'Parse Text Test',
   stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
@@ -67,7 +67,9 @@ context.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "+
   "in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint "+
   "occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-pipeline.fn(context).then( result => {
+// Run component function.
+// Result is the context object modified by pipeline stages
+component.fn(context).then( result => {
   console.log(result);
 });
 ```
