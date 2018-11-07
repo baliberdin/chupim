@@ -1,4 +1,4 @@
-# chupim ![Master Build](https://travis-ci.org/baliberdin/chupim.svg?branch=master)
+# Chupim ![Master Build](https://travis-ci.org/baliberdin/chupim.svg?branch=master)
 Core module for chupim-web project.
 Please visit [Chupim Web Project](https://github.com/baliberdin/chupim-web)
 
