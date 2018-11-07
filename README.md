@@ -6,8 +6,10 @@ Chupim is a javascript **Pipeline Builder** (NodeJS module) that you can define 
 flow in a simple way, just by connecting the stages. **Stages** are asynchronous functions that 
 you must implement to do something. Each stage is connected to another, so the output of the 
 first stage is the input of the second stage and so on ...
+
 The first entry to the first stage is something we call context.
 **Context** is just a JSON object that doesn't have fixed schema. You can put almost anything into it.
+
 Let's see some examples of how to use chupim on a simple pipeline to transform text.
 
 ```javascript
@@ -27,6 +29,13 @@ chupim.stages.register('myPackage','mySplitParagraphStage', async (context) => {
   return context;
 });
 
+// Register a new component
+const component = chupim.registerComponent({
+  id: 'parse_text_test',
+  name:'Parse Text Test',
+  stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
+});
+
 // Create an empty context
 var context = chupim.createContext();
 
@@ -38,14 +47,8 @@ context.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "+
   "in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint "+
   "occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-// Register a new component
-chupim.registerComponent({
-  id: 'parse_text_test',
-  name:'Parse Text Test',
-  stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
-});
-
-const pipeline = chupim.getPipelineComponent('parse_text_test')
+// Run component pipeline function and then log result into console
+// Result is the context object modified by pipeline
 pipeline.fn(context).then( result => {
   console.log(result);
 });
