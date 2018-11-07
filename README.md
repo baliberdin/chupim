@@ -12,9 +12,27 @@ The first entry to the first stage is something we call context.
 
 Let's see some examples of how to use chupim on a simple pipeline to transform text.
 
+### Create new npm project
+Create a new folder
+```bash
+mkdir chupim-test
+cd chupim-test
+```
+
+Initialize npm. Run this command and answer the questions
+```bash
+npm init
+```
+
+Installing chupim
+```
+npm install -s chupim
+```
+
+Create a new file test.js
 ```javascript
 // Import Chupim module
-const chupim = require('./');
+const chupim = require('chupim');
 
 // Register new stage
 chupim.stages.register('myPackage','myLowercaseStage', async (context) => {
@@ -52,6 +70,10 @@ context.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "+
 pipeline.fn(context).then( result => {
   console.log(result);
 });
+```
+Running
+```bash
+node test.js
 ```
 
 You will see something like that:
