@@ -91,3 +91,5 @@ You will see something like that:
      'excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.' ] }
      
 ```
+
+The object **_chupim_** is a pipeline metada, text and paragraphs are data handled by pipeline objects.
