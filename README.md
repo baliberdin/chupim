@@ -10,7 +10,7 @@ The first entry to the first stage is something we call context.
 **Context** is just a JSON object that doesn't have fixed schema. You can put almost anything into it.
 Let's see some examples of how to use chupim on a simple pipeline to transform text.
 
-```
+```javascript
 // Import Chupim module
 const chupim = require('chupim');
 
@@ -52,7 +52,7 @@ pipeline.fn(context).then( result => {
 ```
 
 You will see something like that:
-```
+```javascript
 { _chupim_: 
    { params: { debug: true },
      metadata: { stages_info: [Array], stage: 2, totalTime: 0 } },
