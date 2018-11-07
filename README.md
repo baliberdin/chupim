@@ -14,18 +14,18 @@ Let's see some examples of how to use chupim on a simple pipeline to transform t
 
 ### Create new npm project
 Create a new folder
-```bash
+```shell
 mkdir chupim-test
 cd chupim-test
 ```
 
 Initialize npm. Run this command and answer the questions
-```bash
+```shell
 npm init
 ```
 
 Installing chupim
-```
+```shell
 npm install -s chupim
 ```
 
@@ -72,7 +72,7 @@ pipeline.fn(context).then( result => {
 });
 ```
 Running
-```bash
+```shell
 node test.js
 ```
 
