@@ -12,7 +12,7 @@ module.exports = {
   createContext: function(){
 		var context = {
 			_chupim_: {
-        params: {},
+        params: {debug:false},
         metadata:{
           stages_info:[], 
           executed_stages:0

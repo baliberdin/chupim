@@ -1,5 +1,16 @@
 const test = require('tape');
-const chupim = require('../index.js');
+const chupim = require('../');
+
+// Registering stages for test
+chupim.stages.register('test','stage1', async (c) => {
+  console.log('test'); 
+  return c;
+});
+
+chupim.stages.register('test','stage2', async (c) => {
+  console.log('test'); 
+  return c;
+});
 
 test('Should register a new component with only id, name and stages', t => {
   let pipeline = chupim.registerComponent({
@@ -13,4 +24,21 @@ test('Should register a new component with only id, name and stages', t => {
   t.assert(pipeline.id == 'parse_text_test');
   t.assert(pipeline.name == 'Parse Text Test');
   t.end();
+});
+
+test('Should not throw exception when pipeline is executed without extra parameters', t => {
+  let context = chupim.createContext();
+  let pipeline = chupim.registerComponent({
+    id: 'test',
+    name:'Test',
+    stages:['test.stage1', 'test.stage2']
+  });
+
+  pipeline.fn(context).then(r => {
+    t.assert(r != undefined, 'Has pipeline result');
+    t.end();
+  }).catch(e => {
+    t.fail('Pipeline has failed');
+    t.end(e);
+  });
 });

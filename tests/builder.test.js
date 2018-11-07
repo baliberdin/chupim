@@ -3,32 +3,32 @@ const chupim = require('../index.js');
 
 // Registering stages for test
 chupim.stages.register('test','stage1', async (c) => {
-    console.log('teste'); 
+    console.log('test'); 
     return c;
 });
 
 chupim.stages.register('test','stage2', async (c) => {
-    console.log('teste'); 
+    console.log('test'); 
     return c;
 });
 
 chupim.stages.register('test','stage3', async (c) => {
-    console.log('teste'); 
+    console.log('test'); 
     return c;
 });
 
 chupim.stages.register('test','stage4', async (c) => {
-    console.log('teste'); 
+    console.log('test'); 
     return c;
 });
 
 chupim.stages.register('test','stage5', async (c) => {
-    console.log('teste'); 
+    console.log('test'); 
     return c;
 });
 
 chupim.stages.register('test','stage6', async (c) => {
-    console.log('teste'); 
+    console.log('test'); 
     return c;
 });
 
