@@ -92,4 +92,4 @@ You will see something like that:
      
 ```
 
-The object **_chupim_** is a pipeline metada, text and paragraphs are data handled by pipeline objects.
+The object ***_chupim_*** is a pipeline metada, text and paragraphs are data created by pipeline stages.
