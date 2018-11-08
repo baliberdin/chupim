@@ -10,6 +10,8 @@ first stage is the input of the second stage and so on ...
 The first entry to the first stage is something we call context.
 **Context** is just a JSON object that doesn't have fixed schema. You can put almost anything into it.
 
+The chupim allows you to build from a simple serial pipeline to parallel pipelines and mixed pipelines
+
 Let's see some examples of how to use chupim on a simple pipeline to transform text.
 
 ### Create new npm project
@@ -93,3 +95,75 @@ You will see something like that:
 ```
 
 The object ***_chupim_*** is a pipeline metada, text and paragraphs are data created by pipeline stages.
+
+
+## Advanced Stages Arrangement 
+To construct advanced pipelines with Chupim we need to understand how chupim works with stages arrangements.
+Every stage arrangement on chupim is defined by property [stages] on config of pipeline component.
+
+```javascript
+let config = {
+  id: 'parse_text_test',
+  name:'Parse Text Test',
+  stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
+};
+const component = chupim.registerComponent(config);
+```
+
+On the example above there are two stages in serial mode which is represented by an unidimensional array. 
+***['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']*** 
+
+To transform the same example to an parallel pipeline just switch from unidimensional array to a matrix
+
+```javascript
+...
+  // Pipeline with two stages in parallel
+  stages:[
+    [
+      ['myPackage.myLowercaseStage'], 
+      ['myPackage.mySplitParagraphStage']
+    ]
+  ]
+...
+
+```
+
+The first element of first array is a bidimensional array, which means that each line is a single serial pipeline, but each one needs to be executed at the same time.
+
+```javascript
+...
+  /* Another example
+   Pipeline with two serial pipelines in parallel
+  
+             -> A -> B -> C
+       in ->´              `->out
+            `-> D -> E -> F´
+  */
+  stages:[
+    [
+      ['package.stageA', 'package.stageB', 'package.stageC',], 
+      ['package.stageD', 'package.stageE', 'package.stageF',]
+    ]
+  ]
+...
+
+...
+  /* Another example
+   Pipeline with two serial pipelines in parallel and last one serial 
+  
+             -> A -> B -> C
+       in ->´              `-> G -> H -> I -> out
+            `-> D -> E -> F´
+  */
+  stages:[
+    [
+      ['package.stageA', 'package.stageB', 'package.stageC',], 
+      ['package.stageD', 'package.stageE', 'package.stageF',]
+    ],
+    'package.stageG',
+    'package.stageH',
+    'package.stageI'
+  ]
+...
+
+```
