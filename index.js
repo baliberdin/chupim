@@ -10,17 +10,17 @@ module.exports = {
   components: [],
 
   createContext: function(){
-		var context = {
-			_chupim_: {
+    var context = {
+      _chupim_: {
         params: {debug:false},
         metadata:{
-          stages_info:[], 
+        stages_info:[], 
           executed_stages:0
         }
       }
-		};
-		return context;
-	},
+    };
+    return context;
+  },
 
   registerComponent: function(config){
     let fn = builder.component(config);
