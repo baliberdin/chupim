@@ -68,3 +68,13 @@ test('Should register stage from native function', (t) => {
     t.equals(chupim.stages.native.newStage.name, 'newStage', 'New Stage has a correct name');
     t.end();
 });
+
+test('Should register stage from upper level of api', (t) => {
+  chupim.registerStage('native','newStage', async (c) => {
+      console.log("Ok");
+  });
+
+  t.equals(chupim.stages.native.newStage.fn.constructor.name, 'AsyncFunction', 'New Stage is a Function');
+  t.equals(chupim.stages.native.newStage.name, 'newStage', 'New Stage has a correct name');
+  t.end();
+});

@@ -22,6 +22,10 @@ module.exports = {
     return context;
   },
 
+  registerStage: function(prefix, name, fn){
+    stages.register(prefix,name,fn);
+  },
+
   registerComponent: function(config){
     let fn = builder.component(config);
     let elements = {};
