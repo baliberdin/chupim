@@ -1,11 +1,13 @@
 var builder = require('./lib/builder');
 var pipelines = require('./lib/pipelines.js');
 var stages = require('./lib/stages.js');
+var graph = require('./lib/graph.js');
 
 module.exports = {
   pipelines: pipelines,
   builder: builder,
   stages: stages,
+  graph:graph,
 
   components: [],
 
@@ -28,7 +30,7 @@ module.exports = {
 
   registerComponent: function(config){
     let fn = builder.component(config);
-    let elements = {};
+    let elements = graph.parseElements(config);
     let component = {id:config.id, name:config.name, fn:fn, elements:elements};
     this.components[config.id] = component;
     return this.components[config.id];
