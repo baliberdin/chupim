@@ -12,6 +12,11 @@ chupim.stages.register('test','stage2', async (c) => {
   return c;
 });
 
+chupim.stages.register('test','errorStage', async (c) => {
+  console.log("Stage Error Example");
+  throw new Error('Default error.');
+});
+
 test('Should register a new component with only id, name and stages', t => {
   let pipeline = chupim.registerComponent({
     id: 'parse_text_test',
@@ -41,4 +46,23 @@ test('Should not throw exception when pipeline is executed without extra paramet
     t.fail('Pipeline has failed');
     t.end(e);
   });
+});
+
+test('Pipeline should throw exception when first inner stage rise an error', t => {
+  let context = chupim.createContext();
+  let pipeline = chupim.registerComponent({
+    id: 'test',
+    name:'Test',
+    stages:['test.errorStage']
+  });
+
+  pipeline.fn(context).then(r => {
+    t.assert(r == undefined, 'Has pipeline result');
+    t.fail('Pipeline does not throw exception');
+    t.end();
+  }).catch(e => {
+    t.assert(e != undefined);
+    t.end();
+  });
+
 });
