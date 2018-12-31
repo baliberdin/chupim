@@ -2,12 +2,14 @@ var builder = require('./lib/builder');
 var pipelines = require('./lib/pipelines.js');
 var stages = require('./lib/stages.js');
 var graph = require('./lib/graph.js');
+var metrics = require('./lib/metrics');
 
 module.exports = {
   pipelines: pipelines,
   builder: builder,
   stages: stages,
-  graph:graph,
+  graph: graph,
+  metrics: metrics,
 
   components: [],
 
