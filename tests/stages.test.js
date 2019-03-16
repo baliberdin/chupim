@@ -2,42 +2,42 @@ const test = require('tape');
 const chupim = require('../index.js');
 
 // Registering stages for test
-chupim.stages.register('test','stage1', async (c) => {
-    return c;
+chupim.registerStage({
+    prefix: 'testPipeline',
+    name: 'stage1', 
+    fn: async (c) => {
+        return c;
+    }
 });
 
-chupim.stages.register('test','stage2', async (c) => {
-    return c;
+chupim.registerStage({
+    prefix: 'testPipeline',
+    name: 'stage2', 
+    fn: async (c) => {
+        return c;
+    }
 });
 
-chupim.stages.register('test','stage3', async (c) => {
-    return c;
+chupim.registerStage({
+    prefix: 'testPipeline',
+    name: 'stage3', 
+    fn: async (c) => {
+        return c;
+    }
 });
 
-chupim.stages.register('test','stage4', async (c) => {
-    return c;
-});
-
-chupim.stages.register('test','stage5', async (c) => {
-    return c;
-});
-
-chupim.stages.register('test','stage6', async (c) => {
-    return c;
-});
-
-test('All stages should be a Async Function', (t) => {
-    var stagesList = Object.keys(chupim.stages.test).map( k =>  chupim.stages.test[k]);
+test('All stages should be an Async Function', (t) => {
+    var stagesList = Object.keys(chupim.stages.container.test).map( k =>  chupim.stages.container.test[k]);
     stagesList.forEach( i => t.assert(i.fn.constructor.name == 'AsyncFunction',`[Is Async Function] - ${i.name}`));
     t.end();
 });
 
 test('Should throw error if prefix was undefined', (t) => {
     let prefix = undefined;
-    let name = 'newStage';
+    let name = 'newStage1';
     let source = 'async (context) => {console.log(\"Teste\");}';
 
-    t.throws( function(){chupim.stages.register(prefix, name, source);}, 'Empty prefix was identified');
+    t.throws( function(){chupim.registerStage(prefix, name, source);}, 'Empty prefix was identified');
     t.end();
 });
 
@@ -46,35 +46,55 @@ test('Should throw error if stage name was undefined', (t) => {
     let name = undefined;
     let source = 'async (context) => {console.log(\"Teste\");}';
 
-    t.throws( function(){chupim.stages.register(prefix, name, source);}, 'Empty stage name was identified');
+    t.throws( function(){chupim.registerStage(prefix, name, source);}, 'Empty stage name was identified');
     t.end();
 });
 
-test('Should not register a new Stage if source was not a async function', (t) => {
-    let prefix = 'prefix';
-    let name = 'newStage';
-    let source = 'console.log(\"Teste\");';
+test('Should not register a new Stage if source was not an async function', (t) => {
+    let stage = {
+        prefix: 'prefix',
+        name: 'newStage2',
+        fn: 'console.log(\"Teste\");'
+    };
 
-    t.throws( function(){ chupim.stages.register(prefix, name, source); });
+    t.throws( function(){ chupim.registerStage(stage); });
     t.end();
 });
 
 test('Should register stage from native function', (t) => {
-    chupim.stages.register('native','newStage', async (c) => {
-        console.log("Ok");
+    chupim.registerStage({
+        prefix: 'native',
+        name: 'newStage3', 
+        fn: async (c) => {
+            console.log("Ok");
+        }
     });
 
-    t.equals(chupim.stages.native.newStage.fn.constructor.name, 'AsyncFunction', 'New Stage is a Function');
-    t.equals(chupim.stages.native.newStage.name, 'newStage', 'New Stage has a correct name');
+    try{
+        t.assert(chupim.stages.container.native != undefined, 'The Package has not been registered');
+        t.assert(chupim.stages.container.native['newStage3'] != undefined, 'The Stage has not been registered');
+        t.equals(chupim.stages.container.native['newStage3'].fn.constructor.name, 'AsyncFunction', 'New Stage is a Function');
+        t.equals(chupim.stages.container.native['newStage3'].name, 'newStage3', 'New Stage has a correct name');
+    }catch(e){}
+
     t.end();
 });
 
 test('Should register stage from upper level of api', (t) => {
-  chupim.registerStage('native','newStage', async (c) => {
-      console.log("Ok");
-  });
+    chupim.registerStage({
+        prefix: 'native',
+        name: 'newStage4', 
+        fn: async (c) => {
+            console.log("Ok");
+        }
+    });
 
-  t.equals(chupim.stages.native.newStage.fn.constructor.name, 'AsyncFunction', 'New Stage is a Function');
-  t.equals(chupim.stages.native.newStage.name, 'newStage', 'New Stage has a correct name');
-  t.end();
+    try{
+        t.assert(chupim.stages.container.native != undefined, 'The Package has not been registered');
+        t.assert(chupim.stages.container.native['newStage4'] != undefined, 'The Stage has not been registered');
+        t.equals(chupim.stages.container.native['newStage4'].fn.constructor.name, 'AsyncFunction', 'New Stage is a Function');
+        t.equals(chupim.stages.container.native['newStage4'].name, 'newStage4', 'New Stage has a correct name');
+    }catch(e){}
+
+    t.end();
 });

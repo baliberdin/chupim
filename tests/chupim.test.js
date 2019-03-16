@@ -2,19 +2,28 @@ const test = require('tape');
 const chupim = require('../');
 
 // Registering stages for test
-chupim.stages.register('test','stage1', async (c) => {
-  console.log('test'); 
-  return c;
+chupim.stages.register({
+  prefix: 'test',
+  name: 'stage1', 
+  fn: async (c) => {
+    return c;
+  }
 });
 
-chupim.stages.register('test','stage2', async (c) => {
-  console.log('test'); 
-  return c;
+chupim.stages.register({
+  prefix: 'test',
+  name: 'stage2', 
+  fn: async (c) => { 
+    return c;
+  }
 });
 
-chupim.stages.register('test','errorStage', async (c) => {
-  console.log("Stage Error Example");
-  throw new Error('Default error.');
+chupim.stages.register({
+  prefix: 'test',
+  name: 'errorStage', 
+  fn: async (c) => {
+    throw new Error('Default error.');
+  }
 });
 
 test('Should register a new component with only id, name and stages', t => {

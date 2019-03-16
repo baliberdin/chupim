@@ -37,16 +37,24 @@ Create a new file test.js
 const chupim = require('chupim');
 
 // Register new stage
-chupim.stages.register('myPackage','myLowercaseStage', async (context) => {
-  context.text = context.text.toLowerCase();
-  // To continue and do not stop pipeline you need to return context 
-  return context;
+chupim.registerStage({
+  prefix: 'myPackage',
+  name: 'myLowercaseStage', 
+  fn: async (context) => {
+    context.text = context.text.toLowerCase();
+    // To continue and do not stop pipeline you need to return context or a new Promise 
+    return context;
+  }
 });
 
-// Register another stage to split int paragraph
-chupim.stages.register('myPackage','mySplitParagraphStage', async (context) => {
-  context.paragraphs = context.text.split(". ");
-  return context;
+// Register another stage to split in paragraph
+chupim.registerStage({
+  prefix: 'myPackage',
+  name: 'mySplitParagraphStage', 
+  fn: async (context) => {
+    context.paragraphs = context.text.split(". ");
+    return context;
+  }
 });
 
 // Register a new component
