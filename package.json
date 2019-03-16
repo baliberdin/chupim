@@ -1,16 +1,16 @@
 {
   "name": "chupim",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "A pipeline builder to compose APIs",
   "main": "index.js",
   "directories": {
     "test": "tests"
   },
-  "dependencies": {
-    "tap-spec": "^5.0.0",
-    "tape": "^4.9.1"
+  "dependencies": {},
+  "devDependencies": {
+    "tape": "^4.9.2",
+    "tap-spec": "^5.0.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "tape tests/**/*.js | tap-spec"
   },
