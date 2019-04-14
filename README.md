@@ -1,20 +1,23 @@
-# Chupim ![Master Build](https://travis-ci.org/baliberdin/chupim.svg?branch=master)
-Core module for chupim-web project.
-Please visit [Chupim Web Project](https://github.com/baliberdin/chupim-web)
+# Chupim 
+![Master Build](https://travis-ci.org/baliberdin/chupim.svg?branch=master)
+- [Chupim](#chupim)
+    - [Overview](#overview)
+    - [Simple Example](#simple-example)
+  - [Advanced Stages Arrangement](#advanced-stages-arrangement)
+  - [Circuit Breaker](#circuit-breaker)
 
-Chupim is a javascript **Pipeline Builder** (NodeJS module) that you can define and organize your 
-flow in a simple way, just by connecting the stages. **Stages** are asynchronous functions that 
-you must implement to do something. Each stage is connected to another, so the output of the 
-first stage is the input of the second stage and so on ...
 
+### Overview
+Core module for chupim-web project. Please visit [Chupim Web Project](https://github.com/baliberdin/chupim-web) a Web UI with diagrams to administer chupim pipelines.
+
+Chupim is a javascript **Pipeline Builder** (NodeJS module) that you can define and organize your flow in a simple way, just by connecting the stages. **Stages** are asynchronous functions that you must implement to do something. Each stage is connected to another, so the output of the first stage is the input of the second stage and so on ...
 The first entry to the first stage is something we call context.
 **Context** is just a JSON object that doesn't have fixed schema. You can put almost anything into it.
-
 The chupim allows you to build from a simple serial pipeline to parallel pipelines and mixed pipelines
-
 Let's see some examples of how to use chupim on a simple pipeline to transform text.
 
-### Create new npm project
+
+### Simple Example
 Create a new folder
 ```shell
 mkdir chupim-test
@@ -64,7 +67,7 @@ const component = chupim.registerComponent({
   stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
 });
 
-// Create an empty context
+// Creates an empty context
 var context = chupim.createContext();
 // Set chupim to debug mode. It will keep metadata information on context object.
 context._chupim_.params.debug = true;
@@ -102,7 +105,7 @@ You will see something like that:
      
 ```
 
-The object ***_chupim_*** is a pipeline metada, text and paragraphs are data created by pipeline stages.
+The object ***_chupim_*** is a pipeline metadata, text and paragraphs are data created by pipeline stages.
 
 
 ## Advanced Stages Arrangement 
@@ -174,4 +177,41 @@ The first element of first array is a bidimensional array, which means that each
   ]
 ...
 
+```
+If you thought that it is hard or confusing, see the upper-level project ([Chupim Web](https://github.com/baliberdin/chupim-web)), and do that with just a few clicks on the UI.
+
+## Circuit Breaker
+Chupim is designed to create IO Bound pipelines. It means that stages should be a Service Facade to request data from another system, and of course, it could fail sometimes.
+To protect your pipeline, The Chupim has a Circuit Breaker system.
+This system operates with two triggers, timeout, and exceptions. If a stage spends more time than it should or throws an exception, the circuit breaker executes an action. These actions could be a Fallback Function or throw that error to upper layers of the system.
+If the stage is optional, you could set a simple Fallback function to keep pipeline flow goes on. If not, you can throw the error to stop the pipeline.
+
+```javascript
+
+// Creates a Fallback Stage to set on circuitbreaker
+chupim.registerStage({
+  prefix: 'Fallback',
+  name: 'ReturnContext', 
+  fn: async (context) => {
+    // Simple fallback function. Just Returns the context.
+    return context;
+  }
+});
+
+// Creates Stage with circuit breaker configuration
+chupim.registerStage({
+  prefix: 'myPackage',
+  name: 'myOptionalStage', 
+  fn: async (context) => {
+    // here, code to facade to another optional system
+    // eg: Request RSS news from BBC.
+    return context;
+  },
+  circuitbreaker: {
+    enabled: true,
+    timeout: 200, // <- Time in miliseconds
+    action: 1, // 0-Throw Error, 1-Fallback Function
+    fn: 'Fallback.ReturnContext' // <- Fallback stage created before
+  }
+});
 ```
