@@ -25,7 +25,7 @@
     "microservices"
   ],
   "author": "Allan Baliberdin <a.baliberdin@gmail.com>",
-  "license": "ISC",
+  "license": "Apache 2",
   "bugs": {
     "url": "https://github.com/baliberdin/chupim/issues"
   },
