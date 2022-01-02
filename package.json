@@ -7,11 +7,11 @@
     "test": "tests"
   },
   "devDependencies": {
-    "tap-spec": "^2.2.2",
+    "@randomgoods/tap-spec": "^5.0.1",
     "tape": "^4.9.2"
   },
   "scripts": {
-    "test": "tape tests/**/*.js | tap-spec"
+    "test": "tape tests/**/*.js | node_modules/@randomgoods/tap-spec/bin/cmd.js"
   },
   "repository": {
     "type": "git",
