@@ -6,10 +6,9 @@
   "directories": {
     "test": "tests"
   },
-  "dependencies": {},
   "devDependencies": {
-    "tape": "^4.9.2",
-    "tap-spec": "^5.0.0"
+    "tap-spec": "^2.2.2",
+    "tape": "^4.9.2"
   },
   "scripts": {
     "test": "tape tests/**/*.js | tap-spec"
