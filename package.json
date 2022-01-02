@@ -7,8 +7,8 @@
     "test": "tests"
   },
   "devDependencies": {
-    "@randomgoods/tap-spec": "^5.0.1",
-    "tape": "^4.9.2"
+    "tape": "^4.9.2",
+    "@randomgoods/tap-spec": "^5.0.1"
   },
   "scripts": {
     "test": "tape tests/**/*.js | node_modules/@randomgoods/tap-spec/bin/cmd.js"
