@@ -90,7 +90,7 @@ var config5 = {stages:[
 test('Should create a list of Serial pipeline stages from Config', (t) => {
     var result = chupim.builder.getStagesByName(config.stages);
 
-    t.equal(result.constructor, Array, 'Resul is an array');
+    t.equal(result.constructor, Array, 'Result is an array');
     t.assert(result.length == 4, 'Has all configured stages');
     result.map( s => {
         t.equal(s.fn.constructor.name, 'AsyncFunction', `${s.name} is AsyncFunction`);
