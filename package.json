@@ -1,6 +1,6 @@
 {
   "name": "chupim",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A pipeline builder to compose APIs",
   "main": "index.js",
   "directories": {
