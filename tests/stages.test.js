@@ -115,3 +115,16 @@ test('Should register stage from upper level of api', (t) => {
 
     t.end();
 });
+
+test('Should Return Stage when register with success', (t) => {
+    let testStage = chupim.registerStage({
+        prefix: 'newStageAPI',
+        name: 'returnStage', 
+        fn: async (c) => {
+            return c;
+        }
+    });
+
+    t.assert(testStage.key() == "newStageAPI.returnStage");
+    t.end();
+});
