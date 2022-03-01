@@ -46,7 +46,7 @@ module.exports = {
   },
 
   registerStage: function(stage){
-    this.stages.register(stage);
+    return this.stages.register(stage);
   },
 
   registerComponent: function(config){
