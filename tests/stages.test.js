@@ -61,7 +61,7 @@ test('Should throw error if prefix was undefined', (t) => {
 test('Should throw error if stage name was undefined', (t) => {
     let prefix = 'prefix';
     let name = undefined;
-    let source = 'async (context) => {console.log(\"Teste\");}';
+    let source = async (context) => {console.log("Teste");};
 
     t.throws( function(){chupim.registerStage(prefix, name, source);}, 'Empty stage name was identified');
     t.end();
@@ -97,7 +97,7 @@ test('Should register stage from native function', (t) => {
     t.end();
 });
 
-test('Should register stage from upper level of api', (t) => {
+test('Should register stage from api upper level', (t) => {
     chupim.registerStage({
         prefix: 'native',
         name: 'newStage4', 
@@ -126,5 +126,41 @@ test('Should Return Stage when register with success', (t) => {
     });
 
     t.assert(testStage.key() == "newStageAPI.returnStage");
+    t.end();
+});
+
+test('Should allow point character on prefix', (t) => {
+    let prefix = "com.chupim.example";
+    let name = 'newStage1';
+    let source = async (context) => {console.log("Test");};
+
+    t.doesNotThrow( function(){chupim.registerStage({prefix:prefix, name:name, fn:source});}, 'Pointed prefix was allowed');
+    t.end();
+});
+
+test('Should find stages with point character on prefix', (t) => {
+    let prefix = "com.chupim.example";
+    let name = 'newStage1';
+    let source = async (context) => {console.log("Test");};
+
+    chupim.registerStage({prefix:prefix, name:name, fn:source});
+    let stage = chupim.getStageByPackage(prefix, name);
+
+    t.assert( stage != undefined, 'Stage with Pointed prefix was found');
+    t.assert( stage.name == name, 'Stage name with Pointed prefix was correct');
+    t.assert( stage.prefix == prefix, 'Stage prefix with Pointed prefix was correct');
+    t.end();
+});
+
+test('Should stages with point character on prefix Works', async (t) => {
+    let prefix = "com.chupim.example";
+    let name = 'newStage1';
+    let source = async (context) => { let a = 10, b = 20; return a+b;};
+
+    chupim.registerStage({prefix:prefix, name:name, fn:source});
+    let stage = chupim.getStageByPackage(prefix, name);
+
+    t.doesNotThrow( function(){ stage.fn(); }, 'Pointed prefix was Executed with success');
+    t.assert(await stage.fn() == 30, 'Pointed prefix stage was returned value with success')
     t.end();
 });

@@ -65,11 +65,9 @@ module.exports = {
     delete this.components[id];
   },
 
-  getStage: function(sName){
-    let type = sName.substring(0,sName.indexOf("."));
-    let stageName = sName.substring(sName.indexOf(".")+1,sName.length);
-    if(stages.container[type]){
-      return stages.container[type][stageName];
+  getStageByPackage: function(prefix, stageName){
+    if(stages.container[prefix]){
+      return stages.container[prefix][stageName];
     }
     
     return;
