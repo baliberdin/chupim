@@ -26,11 +26,7 @@ const stage = {
 	getStageFunction: function(sName: string): StageFunction | undefined {
     let type = sName.substring(0,sName.indexOf("."));
     let stageName = sName.substring(sName.indexOf(".")+1,sName.length);
-    if(this.container[type]){
-      return this.container[type][stageName].fn;
-    }
-    
-    return;
+    return this.container[type]?.[stageName]?.fn;
   },
 
 	register: function(stage: StageDefinition): Stage {

@@ -134,3 +134,12 @@ test('Should stages with point character on prefix Works', async () => {
     expect(() => fn(), 'Pointed prefix was Executed with success').not.toThrow();
     expect(await fn(), 'Pointed prefix stage was returned value with success').toBe(30);
 });
+
+test('Should throw a clear error when fallback stage does not exist on a known prefix', () => {
+    expect(() => chupim.registerStage({
+        prefix: 'testPipeline',
+        name: 'withMissingFallback',
+        fn: async (c) => c,
+        circuitbreaker: { enabled: true, action: 1, fn: 'testPipeline.doesNotExist' }
+    })).toThrow('Invalid Fallback Function: [testPipeline.doesNotExist]');
+});
