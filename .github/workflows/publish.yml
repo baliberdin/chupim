@@ -1,16 +1,23 @@
 name: Publish
 
-# Publishes the package to npm when a version tag is pushed:
+# Stages a new version on npm when a version tag is pushed:
 #   npm version minor   # updates package.json and creates the v* tag
 #   git push --follow-tags
 #
+# The version is staged, not published: it only becomes public after a
+# maintainer approves it with 2FA, on npmjs.com or with `npm stage approve`.
+# It can also be run by hand (Actions → Publish → Run workflow) to stage the
+# version in package.json of the selected branch.
+#
 # Uses npm trusted publishing (OIDC), so no npm token is stored in the
 # repository. The trusted publisher must be configured on npmjs.com for this
-# repository and this workflow file (publish.yml).
+# repository and this workflow file (publish.yml), with the stage publish
+# permission.
 
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,6 +34,7 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
       - name: Check that the tag matches package.json
+        if: github.ref_type == 'tag'
         run: |
           version="v$(node -p "require('./package.json').version")"
           if [ "$version" != "$GITHUB_REF_NAME" ]; then
@@ -36,4 +44,14 @@ jobs:
       - run: make install
       - run: make test
       - run: make build
-      - run: npm publish
+      - name: Stage the version on npm
+        run: npm stage publish
+      - name: Summary
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          {
+            echo "### chupim@$version staged on npm"
+            echo
+            echo "It is not public yet. Approve it on https://www.npmjs.com/package/chupim"
+            echo "or with \`npm stage list chupim\` and \`npm stage approve <stage-id>\`."
+          } >> "$GITHUB_STEP_SUMMARY"
