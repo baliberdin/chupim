@@ -1,0 +1,39 @@
+name: Publish
+
+# Publishes the package to npm when a version tag is pushed:
+#   npm version minor   # updates package.json and creates the v* tag
+#   git push --follow-tags
+#
+# Uses npm trusted publishing (OIDC), so no npm token is stored in the
+# repository. The trusted publisher must be configured on npmjs.com for this
+# repository and this workflow file (publish.yml).
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # npm trusted publishing and provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .tool-versions
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - name: Check that the tag matches package.json
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+      - run: make install
+      - run: make test
+      - run: make build
+      - run: npm publish

@@ -257,5 +257,14 @@ make test       # type check and run the tests (Vitest)
 make build      # compile src/ to dist/
 ```
 
+To release a new version, bump it and push the tag. The
+[Publish](.github/workflows/publish.yml) workflow tests, builds and publishes
+the package to npm:
+
+```shell
+npm version minor        # or major / patch: updates package.json and creates the tag
+git push --follow-tags
+```
+
 ## License
 [Apache 2.0](LICENSE.txt)
