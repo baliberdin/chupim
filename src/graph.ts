@@ -12,19 +12,31 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-module.exports = {
-  parseElements: function(config){
-    let elements = {nodes:[], edges:[]};
+
+import type { ComponentConfig, GraphEdge, GraphElements, GraphNode, StageList } from './types';
+
+interface RichStage {
+  id: string;
+  label: string;
+}
+
+// Same shape of StageList, but each stage name is replaced by a RichStage
+type RichStageList = Array<RichStage | RichStageList[]>;
+type GraphPoint = { id: string };
+
+const graph = {
+  parseElements: function(config: ComponentConfig): GraphElements {
+    let elements: GraphElements = {nodes:[], edges:[]};
     
-    let input = {
+    let input: GraphNode = {
       data:{id:'Input', label:'Input', type:'source'},
     };
 
-    let output = {
+    let output: GraphNode = {
       data:{id:'Output', label:'Output', type:'sink'},
     };
 
@@ -38,37 +50,37 @@ module.exports = {
     return elements;
   },
 
-  stageConfigToEdgeList: function(stages, edgeList, lastStage, finalStage){
+  stageConfigToEdgeList: function(stages: RichStageList, edgeList: GraphEdge[] | undefined, lastStage: GraphPoint | GraphPoint[], finalStage?: GraphPoint): GraphEdge[] {
     if(edgeList == undefined) edgeList = [];
 
     if(stages.constructor == Array){
       for(var i=0; i<stages.length; i++){
         
         let stage = stages[i];
-        if(stage.constructor == Array){
+        if(Array.isArray(stage)){
           
-          let newLastStage = [];
+          let newLastStage: GraphPoint[] = [];
           for(var j=0; j< stage.length; j++){
             this.stageConfigToEdgeList(stage[j], edgeList, lastStage);
-            newLastStage.push(stage[j][stage[j].length-1]);
+            newLastStage.push(stage[j][stage[j].length-1] as RichStage);
           }
           
           lastStage = newLastStage;
         }else {
-          if(lastStage.constructor == Array){
+          if(Array.isArray(lastStage)){
             for(let k=0;k<lastStage.length; k++){
               edgeList.push(this.stageToEdge(lastStage[k], stage));
             }
           }else{
             edgeList.push(this.stageToEdge(lastStage, stage));
           }
-          lastStage = stages[i];
+          lastStage = stage;
         }
       }
     }
 
     if(finalStage != undefined){
-      if(lastStage.constructor == Array){
+      if(Array.isArray(lastStage)){
         for(let k=0;k<lastStage.length; k++){
           edgeList.push(this.stageToEdge(lastStage[k], finalStage));
         }
@@ -79,13 +91,13 @@ module.exports = {
     return edgeList;
   },
 
-  stageConfigToNodeList: function(stages, stageList){
+  stageConfigToNodeList: function(stages: RichStageList | RichStageList[], stageList?: GraphNode[]): GraphNode[] {
     if(stageList == undefined) stageList = [];
 
     if(stages.constructor == Array){
       for(var i=0; i<stages.length; i++){
         let stage = stages[i];
-        if(stage.constructor == Array){
+        if(Array.isArray(stage)){
           this.stageConfigToNodeList(stage, stageList);
         }else{
           stageList.push(this.stageToNode(stage));
@@ -96,7 +108,7 @@ module.exports = {
     return stageList;
   },
 
-  stageToNode: function(stage){
+  stageToNode: function(stage: RichStage): GraphNode {
     let type = stage.label.split(".")[0];
     let label = stage.label.split(".")[1];
 
@@ -107,7 +119,7 @@ module.exports = {
     return node;
   },
 
-  stageToEdge: function(lastStage, stage){
+  stageToEdge: function(lastStage: GraphPoint, stage: GraphPoint): GraphEdge {
     let edge = {
       data:{
         source:lastStage.id,
@@ -118,9 +130,9 @@ module.exports = {
     return edge;
   },
 
-  fromConfigToRichStages: function(stages, id){
+  fromConfigToRichStages: function(stages: StageList, id?: number): RichStageList {
     if(id == undefined)id=0;
-    let richStages = [];
+    let richStages: any[] = [];
     let pid = 0;
     let arr = 0;
     Object.assign(richStages, stages);
@@ -138,3 +150,5 @@ module.exports = {
   }
 
 }
+
+export default graph;

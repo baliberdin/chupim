@@ -12,16 +12,18 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-const circuitbreaker = require('./circuitbreaker');
+import circuitbreaker from './circuitbreaker';
+import type { JoinFunction, Stage, StageDefinition, StageFunction } from './types';
+
 const stage = {
 
-	container: {},
+	container: {} as Record<string, Record<string, Stage>>,
 	
-	getStageFunction: function(sName){
+	getStageFunction: function(sName: string): StageFunction | undefined {
     let type = sName.substring(0,sName.indexOf("."));
     let stageName = sName.substring(sName.indexOf(".")+1,sName.length);
     if(this.container[type]){
@@ -31,7 +33,7 @@ const stage = {
     return;
   },
 
-	register: function(stage) {
+	register: function(stage: StageDefinition): Stage {
 		if(stage == undefined || stage == null || stage.constructor !== Object) throw new Error('Invalid stage object.');
 		if(stage.prefix == undefined || stage.name == undefined) throw new Error('Invalid prefix or stage name.');
 
@@ -40,7 +42,8 @@ const stage = {
 		}
 
 		if(stage.fn != undefined && stage.fn.constructor != undefined && stage.fn.constructor.name == 'AsyncFunction'){
-			stage.source = stage.fn.toString();
+			const registered = stage as Stage;
+			registered.source = stage.fn.toString();
 
 			if(stage.circuitbreaker && stage.circuitbreaker.enabled == true){
 				let serviceName = `${stage.prefix}.${stage.name}`;
@@ -50,7 +53,7 @@ const stage = {
 					stage.fn = circuitbreaker.timedFunction(serviceName,stage.fn, stage.circuitbreaker.timeout);
 
 				}else if(stage.circuitbreaker.action == 1){
-					let fallbackFunction = this.getStageFunction(stage.circuitbreaker.fn);
+					let fallbackFunction = stage.circuitbreaker.fn ? this.getStageFunction(stage.circuitbreaker.fn) : undefined;
 
 					if(stage.circuitbreaker.fn && fallbackFunction != undefined && fallbackFunction.constructor.name == 'AsyncFunction'){
 						stage.fn = circuitbreaker.timedFallback(serviceName,stage.fn, fallbackFunction, stage.circuitbreaker.timeout);
@@ -63,16 +66,16 @@ const stage = {
 				}
 			}
 			
-			stage.key = () =>  stage.prefix+"."+stage.name;
-			this.container[stage.prefix][stage.name] = stage;
-			return stage;
+			registered.key = () =>  stage.prefix+"."+stage.name;
+			this.container[stage.prefix][stage.name] = registered;
+			return registered;
 		}else{
 			throw new Error('Invalid Stage. Stages must be Async Function.');
 		}
 	},
 
 	join: {
-		defaultJoin: (values) => {
+		defaultJoin: ((values) => {
 			var results = values.filter( v => {
 				if(v){
 					return v;
@@ -88,8 +91,8 @@ const stage = {
 			}
 
 			return;
-		}
+		}) as JoinFunction
 	}
 }
 
-module.exports = stage;
+export default stage;

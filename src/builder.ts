@@ -12,18 +12,20 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-const pipeline = require('./pipelines');
-const stages = require('./stages');
-const metrics = require('./metrics');
+
+import pipeline from './pipelines';
+import stages from './stages';
+import metrics from './metrics';
+import type { ComponentConfig, Context, GroupPipelineObject, PipelineFunction, PipelineObject, Stage, StageList } from './types';
 
 const builder = {
 
-    getStagesByName: function(stageNamesList){
-        var stageList = [];
+    getStagesByName: function(stageNamesList?: string[]): Stage[] {
+        var stageList: Stage[] = [];
 
         if(stageNamesList != undefined && stageNamesList.constructor === Array){
             stageNamesList.map(s => {
@@ -39,8 +41,8 @@ const builder = {
         return stageList;
     },
 
-    isASingleSerialPipeline: function(list){
-        if(list.constructor == Array){
+    isASingleSerialPipeline: function(list: unknown): boolean {
+        if(Array.isArray(list)){
             var result = true;
             list.forEach( i => {
                 if(i.constructor == Array)result = false;
@@ -51,10 +53,10 @@ const builder = {
         }
     },
 
-    isAMixedPipeline: function(list){
+    isAMixedPipeline: function(list: unknown): boolean {
       var result = false;
       var type;
-      if(list.constructor == Array){
+      if(Array.isArray(list)){
           for(var i=0; i<list.length; i++){
             var stage = list[i];
 
@@ -73,55 +75,52 @@ const builder = {
       }
     },
 
-    createSimpleSerialPipeline: function(stages){
+    createSimpleSerialPipeline: function(stages: string[]): PipelineFunction {
         return (c) => pipeline
             .serialPipeline(c, ...this.getStagesByName(stages));
     },
 
-    createMixedPipeline: function(stages){
+    createMixedPipeline: function(stages: StageList): GroupPipelineObject {
       return {type:"group", pipelines:this.extractInlinePipelines(stages)};
     },
 
-    extractInlinePipelines: function(stages, pipelines){
+    extractInlinePipelines: function(stages?: StageList, pipelines?: PipelineObject[]): PipelineObject[] {
       if(pipelines == undefined) pipelines = [];
       if(stages == undefined || stages.constructor != Array)return pipelines;
       
-      var splicedStages = [];
+      var splicedStages: string[] = [];
         for(var i=0; i<stages.length; i++){
           var s = stages[i];
 
-          if(s.constructor != Array){
+          if(!Array.isArray(s)){
             splicedStages.push(s);
           }else{
             if(splicedStages.length > 0){
               var serialPipeline = this.createSimpleSerialPipeline(splicedStages);
-              var p = {type:"serial",pipeline:serialPipeline, names:splicedStages};
-              pipelines.push(p);
+              pipelines.push({type:"serial",pipeline:serialPipeline, names:splicedStages});
               splicedStages = [];
             }
             
-            var parallelPipelines = [];
+            var parallelPipelines: PipelineObject[] = [];
             for(var j=0; j<s.length; j++){
               var a = s[j];
               parallelPipelines.push(...this.stageConfigToPipelineObjects(a,[]));
             }
 
-            var pipeline = {type:"parallel",pipelines:parallelPipelines};
-            pipelines.push(pipeline);
+            pipelines.push({type:"parallel",pipelines:parallelPipelines});
           }
         }
 
         if(splicedStages.length > 0){
           var serialPipeline = this.createSimpleSerialPipeline(splicedStages);
-          var p = {type:"serial",pipeline:serialPipeline, names:splicedStages};
-          pipelines.push(p);
+          pipelines.push({type:"serial",pipeline:serialPipeline, names:splicedStages});
           splicedStages = [];
         }
 
         return pipelines;
     },
 
-    stageConfigToPipelineObjects: function(stages, pipelines){
+    stageConfigToPipelineObjects: function(stages?: StageList, pipelines?: PipelineObject[]): PipelineObject[] {
       if(pipelines == undefined) pipelines = [];
       if(stages == undefined || stages.constructor != Array)return pipelines;
 
@@ -135,8 +134,8 @@ const builder = {
       return pipelines;
     },
 
-    pipelineObjectsToComponent: function(pipelineObjects){
-      var fn = async (c) => c;
+    pipelineObjectsToComponent: function(pipelineObjects: PipelineObject[]): PipelineFunction {
+      var fn: PipelineFunction = async (c) => c;
       pipelineObjects.forEach( p => {
         var faux = fn;
 
@@ -147,7 +146,7 @@ const builder = {
             if(pp.type == 'group'){
               return this.pipelineObjectsToComponent(pp.pipelines);
             }else{
-              return pp.pipeline;
+              return (pp as any).pipeline as PipelineFunction;
             }
           });
           
@@ -160,15 +159,15 @@ const builder = {
       return fn;
     },
 
-    component: function(config){
+    component: function(config: ComponentConfig): (context: Context) => Promise<any> {
         var pipelineObjects = this.stageConfigToPipelineObjects(config.stages);
         var fn = this.pipelineObjectsToComponent(pipelineObjects);
         return async (context) => {
 
-          var elapsedTime = new Date();
+          var startTime = new Date();
           let pipelineResult = await fn(context);
 
-          let totalTime = new Date() - elapsedTime;
+          let totalTime = new Date().getTime() - startTime.getTime();
           pipelineResult._chupim_.metadata.totalTime = totalTime;
 
           if(pipelineResult._chupim_.params.debug.constructor == Boolean && !pipelineResult._chupim_.params.debug){
@@ -181,4 +180,4 @@ const builder = {
     }
 }
 
-module.exports = builder;
+export default builder;

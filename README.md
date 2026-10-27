@@ -215,3 +215,28 @@ chupim.registerStage({
   }
 });
 ```
+## TypeScript
+Chupim is written in TypeScript and ships its type definitions.
+
+```typescript
+import * as chupim from 'chupim';
+import type { Context } from 'chupim';
+
+chupim.registerStage({
+  prefix: 'myPackage',
+  name: 'myLowercaseStage',
+  fn: async (context: Context) => {
+    context.text = context.text.toLowerCase();
+    return context;
+  }
+});
+```
+
+## Development
+Node version is pinned in `.tool-versions` (asdf).
+
+```shell
+make install    # npm ci
+make test       # typecheck + vitest
+make build      # compiles src/ to dist/
+```

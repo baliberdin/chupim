@@ -12,12 +12,13 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-const test = require('tape');
-const chupim = require('../');
+
+import { test, expect } from 'vitest';
+import * as chupim from '../src';
 
 // Registering stages for test
 chupim.stages.register({
@@ -38,12 +39,13 @@ chupim.stages.register({
   }
 });
 
-test('Should parse stage config to graph elements', t => {
-  let config = {
+test('Should parse stage config to graph elements', () => {
+  const config = {
+    id: 'graph',
     stages:['testGraph.stage1','testGraph.stage2',[ ['testGraph.stage3'], ['testGraph.stage4'] ], 'testGraph.stage5','testGraph.stage6']
   };
 
-  let expectedElements = {
+  const expectedElements = {
     nodes:[
       { data:{ id:'Input', label:'Input', type:'source' } },
       { data: { id:'Output', label:'Output', type:'sink' } },
@@ -67,8 +69,7 @@ test('Should parse stage config to graph elements', t => {
     ]
   };
   
-  let elements = chupim.graph.parseElements(config);
+  const elements = chupim.graph.parseElements(config);
 
-  t.deepEquals(elements, expectedElements);
-  t.end();
+  expect(elements).toEqual(expectedElements);
 });

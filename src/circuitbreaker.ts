@@ -1,5 +1,3 @@
-const metrics = require('./metrics');
-const errors = require('./errors');
 /*
    Copyright 2019 Allan Mendes Silva Baliberdin
 
@@ -14,13 +12,17 @@ const errors = require('./errors');
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-module.exports = {
+import metrics from './metrics';
+import errors from './errors';
+import type { Context, FallbackFunction, StageFunction } from './types';
 
-  timedFunction: function(serviceName, fn, timeout){
+const circuitbreaker = {
+
+  timedFunction: function(serviceName: string, fn: StageFunction, timeout?: number): StageFunction {
     return async context => {
       return new Promise((resolve, reject) => {
         var timeLimit = timeout || 1000;
@@ -49,7 +51,7 @@ module.exports = {
     };
   },
 
-  timedFallback: function(serviceName, fn, fallbackFunction, timeout){
+  timedFallback: function(serviceName: string, fn: StageFunction, fallbackFunction: FallbackFunction, timeout?: number): StageFunction {
     return async context => {
       return new Promise((resolve, reject) => {
         var timeLimit = timeout || 1000;
@@ -67,7 +69,7 @@ module.exports = {
           timeLimit
         );
 
-        fn(Object.create(context))
+        fn(Object.create(context) as Context)
           .then(r => {
             if(!rejected){
               resolved = true;
@@ -82,3 +84,5 @@ module.exports = {
     };
   },
 };
+
+export default circuitbreaker;

@@ -12,16 +12,17 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
-const test = require('tape')
-const chupim = require('../');
+
+import { test, expect } from 'vitest';
+import * as chupim from '../src';
 
 // Registering stages for test
-const package = "testCircuitBreaker";
+const pkg = "testCircuitBreaker";
 chupim.registerStage({
-  prefix: package,
+  prefix: pkg,
   name: 'stage1', 
   fn: async (c) => {
     return c;
@@ -29,7 +30,7 @@ chupim.registerStage({
 });
 
 chupim.registerStage({
-  prefix: package,
+  prefix: pkg,
   name: 'fallback', 
   fn: async (c) => {
     c.fallback = 'ok';
@@ -38,10 +39,10 @@ chupim.registerStage({
 });
 
 chupim.registerStage({
-  prefix: package,
+  prefix: pkg,
   name: 'stage2', 
   fn: async (context) => { 
-    return await new Promise( (resolve, reject) => {
+    return await new Promise( (resolve) => {
       setTimeout(() => {
         resolve(context);
       }, 250); 
@@ -55,10 +56,10 @@ chupim.registerStage({
 });
 
 chupim.registerStage({
-  prefix: package,
+  prefix: pkg,
   name: 'stage3', 
   fn: async (context) => { 
-    return await new Promise( (resolve, reject) => {
+    return await new Promise( (resolve) => {
       setTimeout(() => {
         resolve(context);
       }, 250); 
@@ -68,42 +69,30 @@ chupim.registerStage({
     enabled: true,
     timeout: 200,
     action: 1,
-    fn: `${package}.fallback`
+    fn: `${pkg}.fallback`
   }  
 });
 
-test('Should break a stage if it spent more than 200 milliseconds', (t) => {
-  let context = chupim.createContext();
-  let pipeline = chupim.registerComponent({
+test('Should break a stage if it spent more than 200 milliseconds', async () => {
+  const context = chupim.createContext();
+  const pipeline = chupim.registerComponent({
     id: 'circuit-breaker-test1',
     name:'CircuitBreakerTest1',
-    stages:[`${package}.stage1`,`${package}.stage2`]
+    stages:[`${pkg}.stage1`,`${pkg}.stage2`]
   });
 
-  pipeline.fn(context).then(r => {
-    t.assert(r == undefined, 'Has pipeline result');
-    t.fail('Pipeline does not throw exception');
-    t.end();
-  }).catch(e => {
-    t.assert(e != undefined, 'Has an error message');
-    t.end();
-  });
+  await expect(pipeline.fn(context)).rejects.toThrow(`Timeout on: ${pkg}.stage2.`);
 });
 
-test('Should fallback a stage if it spent more than 200 milliseconds', (t) => {
-  let context = chupim.createContext();
-  let pipeline = chupim.registerComponent({
+test('Should fallback a stage if it spent more than 200 milliseconds', async () => {
+  const context = chupim.createContext();
+  const pipeline = chupim.registerComponent({
     id: 'circuit-breaker-test2',
     name:'CircuitBreakerTest2',
-    stages:[`${package}.stage1`,`${package}.stage3`]
+    stages:[`${pkg}.stage1`,`${pkg}.stage3`]
   });
 
-  pipeline.fn(context).then(r => {
-    t.assert(r != undefined, 'Has pipeline result');
-    t.assert(r.fallback == 'ok', 'Result has a fallback information');
-    t.end();
-  }).catch(e => {
-    t.fail('Has an error message');
-    t.end();
-  });
+  const r = await pipeline.fn(context);
+  expect(r, 'Has pipeline result').toBeDefined();
+  expect(r.fallback, 'Result has a fallback information').toBe('ok');
 });

@@ -12,47 +12,51 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-const metrics = require('./metrics');
-const errors = require('./errors');
+import metrics from './metrics';
+import errors from './errors';
+import type { Context, JoinFunction, PipelineFunction, Stage, StageInfo } from './types';
 
-const stageWrapper = async (context, stage) => {
+const stageWrapper = async (context: Context, stage: Stage | PipelineFunction): Promise<any> => {
 	if(stage.name == undefined || stage.name == null || stage.name.trim() == ""){
 		// this is a anonymous function
-		return await stage(context);
+		return await (stage as PipelineFunction)(context);
 	}
 
+	const s = stage as Stage;
+
 	if(context == undefined || context.constructor !== Object){
-		console.log(`[INFO] Stage [${stage.name}] skiped.`);
+		console.log(`[INFO] Stage [${s.name}] skiped.`);
 		return undefined;
 	}
 
-	var elapsedTime = new Date();
+	var startTime = new Date();
+	var elapsedTime: number;
 	var result;
-	var error;
+	var error: string | undefined;
 
 	try {
 		//let c = Object.create(context);
-		result = await stage.fn(context);
+		result = await s.fn(context);
 	}catch(e){
-		error = e.toString();
+		error = String(e);
 		result = context;
-		elapsedTime = new Date() - elapsedTime;
-		metrics.addHit(stage.key(), elapsedTime,2);
-		errors.addStageError(stage,e);
+		elapsedTime = new Date().getTime() - startTime.getTime();
+		metrics.addHit(s.key(), elapsedTime,2);
+		errors.addStageError(s,e);
 		throw e
 	}
 
-	elapsedTime = new Date() - elapsedTime;
-	metrics.addMetric(stage.key(), elapsedTime);
+	elapsedTime = new Date().getTime() - startTime.getTime();
+	metrics.addMetric(s.key(), elapsedTime);
   
-	if(context._chupim_.metadata.stages_info[stage.name] == undefined){
-		var stageMetadata = {
-      name:stage.name, 
-      prefix:stage.prefix, 
+	if((context._chupim_.metadata.stages_info as any)[s.name] == undefined){
+		var stageMetadata: StageInfo = {
+      name:s.name, 
+      prefix:s.prefix, 
       elapsedTime: elapsedTime, 
       execution_indx:context._chupim_.metadata.executed_stages++
     };
@@ -68,31 +72,30 @@ const stageWrapper = async (context, stage) => {
 };
 
 const pipeline = {
-	serialPipeline: async (context, ...stages) => {
-		var i=0;
+	serialPipeline: async (context: any, ...stages: Stage[]): Promise<any> => {
 		if(stages.length == 1){
 			return stageWrapper(context,stages[0]);
 		}
 
-    var fn = stages.length == 0? context: stages
+    var fn: PipelineFunction = stages.length == 0? context: (stages as Array<Stage | PipelineFunction>)
       .reduce( (f1,f2) => {
         if(f1.constructor.name == 'Object'){
-          return async (q) => stageWrapper(q,f1)
+          return async (q: any) => stageWrapper(q,f1)
             .then(r => stageWrapper(r,f2));	
         }else{
-          return async (q) => f1(q)
+          return async (q: any) => (f1 as PipelineFunction)(q)
             .then(r => stageWrapper(r,f2));
         }
-      });
+      }) as PipelineFunction;
       
 		return fn(context);
 	},
 
-	parallelPipeline: async (context, joinFunction, ...pipelines) => {
+	parallelPipeline: async (context: any, joinFunction: JoinFunction, ...pipelines: PipelineFunction[]): Promise<any> => {
 		if(pipelines.length == 0){
 			return joinFunction(context);
 		}else{
-			let results = [];
+			let results: any[] = [];
 			let pipelinesPromises = pipelines.map( pipeline => {
 				return pipeline(context).then( result => results.push(result) );
 			});	
@@ -103,4 +106,4 @@ const pipeline = {
 	}
 }
 
-module.exports = pipeline;
+export default pipeline;

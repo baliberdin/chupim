@@ -12,12 +12,13 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-const test = require('tape');
-const chupim = require('../');
+
+import { test, expect } from 'vitest';
+import * as chupim from '../src';
 
 // Registering stages for test
 chupim.stages.register({
@@ -44,52 +45,38 @@ chupim.stages.register({
   }
 });
 
-test('Should register a new component with only id, name and stages', t => {
-  let pipeline = chupim.registerComponent({
+test('Should register a new component with only id, name and stages', () => {
+  const pipeline = chupim.registerComponent({
     id: 'parse_text_test',
     name:'Parse Text Test',
     stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
   });
 
-  t.assert(pipeline != undefined, 'Pipeline has been created');
-  t.assert(pipeline.fn.constructor.name == 'AsyncFunction');
-  t.assert(pipeline.id == 'parse_text_test');
-  t.assert(pipeline.name == 'Parse Text Test');
-  t.end();
+  expect(pipeline, 'Pipeline has been created').toBeDefined();
+  expect(pipeline.fn.constructor.name).toBe('AsyncFunction');
+  expect(pipeline.id).toBe('parse_text_test');
+  expect(pipeline.name).toBe('Parse Text Test');
 });
 
-test('Should not throw exception when pipeline is executed without extra parameters', t => {
-  let context = chupim.createContext();
-  let pipeline = chupim.registerComponent({
+test('Should not throw exception when pipeline is executed without extra parameters', async () => {
+  const context = chupim.createContext();
+  const pipeline = chupim.registerComponent({
     id: 'test',
     name:'Test',
     stages:['test.stage1', 'test.stage2']
   });
 
-  pipeline.fn(context).then(r => {
-    t.assert(r != undefined, 'Has pipeline result');
-    t.end();
-  }).catch(e => {
-    t.fail('Pipeline has failed');
-    t.end(e);
-  });
+  const r = await pipeline.fn(context);
+  expect(r, 'Has pipeline result').toBeDefined();
 });
 
-test('Pipeline should throw exception when first inner stage rise an error', t => {
-  let context = chupim.createContext();
-  let pipeline = chupim.registerComponent({
+test('Pipeline should throw exception when first inner stage rise an error', async () => {
+  const context = chupim.createContext();
+  const pipeline = chupim.registerComponent({
     id: 'test',
     name:'Test',
     stages:['test.errorStage']
   });
 
-  pipeline.fn(context).then(r => {
-    t.assert(r == undefined, 'Has pipeline result');
-    t.fail('Pipeline does not throw exception');
-    t.end();
-  }).catch(e => {
-    t.assert(e != undefined);
-    t.end();
-  });
-
+  await expect(pipeline.fn(context)).rejects.toThrow('Default error.');
 });

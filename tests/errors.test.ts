@@ -12,26 +12,28 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-const test = require('tape');
-const chupim = require('../index.js');
+
+import { test, expect } from 'vitest';
+import * as chupim from '../src';
 
 // Registering stages for test
 chupim.registerStage({
     prefix: 'errorPipeline',
     name: 'stage1', 
     fn: async (c) => {
-      j++; // Undefined var for error test
+      // @ts-expect-error Undefined var for error test
+      j++;
       return c;
     }
 });
 
-test('Should register error under a stage key if stage throw exception inside a pipeline', async (t) => {
+test('Should register error under a stage key if stage throw exception inside a pipeline', async () => {
   try{
-    let comp = chupim.registerComponent({
+    const comp = chupim.registerComponent({
       id:'errorComponent',
       name:'Error Pipeline',
       stages: ['errorPipeline.stage1']
@@ -41,9 +43,8 @@ test('Should register error under a stage key if stage throw exception inside a 
     //console.log(e);
   }
 
-  let errorLog = chupim.errors.filteredByKey('errorPipeline.stage1');
+  const errorLog = chupim.errors.filteredByKey('errorPipeline.stage1');
 
-  t.assert(errorLog.length == 1, 'Has error log under a stage key');
-  t.assert(errorLog[0].error != undefined, 'Has error log');
-  t.end();
+  expect(errorLog, 'Has error log under a stage key').toHaveLength(1);
+  expect(errorLog[0].error, 'Has error log').toBeDefined();
 });
