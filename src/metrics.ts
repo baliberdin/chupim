@@ -12,18 +12,21 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
+
+
+import type { MetricsData } from './types';
 
 const metrics = {
     data: {
         series: {}
-    },
+    } as MetricsData,
 
     lastClean: new Date(),
 
     // type: 0 - Request Success, 1 - CircuitBreak, 2 - Error
-    addHit: function(name, elapsedTime, type){
+    addHit: function(name: string, elapsedTime: number, type: 0 | 1 | 2): void {
         this.prepareDate();
 
         let dtKey = this.getTimeKey();
@@ -55,7 +58,7 @@ const metrics = {
         }
     },
 
-    addCircuitBreak: function(name){
+    addCircuitBreak: function(name: string): void {
         this.prepareDate();
 
         let dtKey = this.getTimeKey();
@@ -76,7 +79,7 @@ const metrics = {
         }
     },
 
-    addMetric: function(name, elapsedTime){
+    addMetric: function(name: string, elapsedTime: number): void {
         this.prepareDate();
 
         let dtKey = this.getTimeKey();
@@ -99,7 +102,7 @@ const metrics = {
         }
     },
 
-    addError: function(name){
+    addError: function(name: string): void {
         this.prepareDate();
 
         let dtKey = this.getTimeKey();
@@ -120,7 +123,7 @@ const metrics = {
         }
     },
 
-    getTimeKey: function(d){
+    getTimeKey: function(d?: Date): string {
         let dt = d || new Date();
         dt.setSeconds(0);
         dt.setMilliseconds(0);
@@ -134,22 +137,22 @@ const metrics = {
         return `${year}-${month<10?"0"+month:month}-${day<10?"0"+day:day}T${hour<10?"0"+hour:hour}:${minute<10?"0"+minute:minute}:00`;
     },
 
-    prepareDate: function(d){
+    prepareDate: function(d?: Date): void {
         let txtDt = this.getTimeKey(d);
         if(!metrics.data.series[txtDt]) metrics.data.series[txtDt] = {};
     },
 
-    getPast30Minutes: function(m){
-        minutes = m || 30;
+    getPast30Minutes: function(m?: number): Date {
+        const minutes = m ?? 30;
         var dt = new Date();
         dt.setMilliseconds(0);
         dt.setSeconds(0);
-        return new Date(dt - (minutes*60*1000));
+        return new Date(dt.getTime() - (minutes*60*1000));
     },
 
-    deletePast30Minutes: function(){
-        var dt = metrics.getPast30Minutes();
-        var dtKey = metrics.getTimeKey(dt);
+    deletePast30Minutes: function(): void {
+        var past = metrics.getPast30Minutes();
+        var dtKey = metrics.getTimeKey(past);
         var dt = new Date(Date.parse(dtKey));
 
         Object.keys(metrics.data.series).map( t => {
@@ -162,19 +165,19 @@ const metrics = {
         this.lastClean = new Date();
     },
 
-    getRPM: function(id){
+    getRPM: function(id: string): string {
         return (Object.keys(this.data.series)
             .map(t => this.data.series[t][id]?this.data.series[t][id].requests:0)
             .reduce( (a,b) => a+b)/Object.keys(this.data.series).length).toFixed(2);
     },
 
-    getErrors: function(id){
+    getErrors: function(id: string): number {
         return (Object.keys(this.data.series)
             .map(t => this.data.series[t][id]?this.data.series[t][id].errors:0)
             .reduce( (a,b) => a+b));
     },
 
-    getErrorsPercent: function(id){
+    getErrorsPercent: function(id: string): number | string {
         var reqs = (Object.keys(this.data.series)
             .map(t => this.data.series[t][id]?this.data.series[t][id].requests:0)
             .reduce( (a,b) => a+b));
@@ -187,7 +190,7 @@ const metrics = {
         return isNaN(percent)?0:percent.toFixed(2);
     },
 
-    getResponseTime: function(id){
+    getResponseTime: function(id: string): string {
         let totalTime = (Object.keys(this.data.series)
             .map(t => this.data.series[t][id]?this.data.series[t][id].totalTime:0)
             .reduce( (a,b) => a+b));
@@ -198,12 +201,12 @@ const metrics = {
 
         var responseTime = (totalTime / requests).toFixed(2);
 
-        return isNaN(responseTime)?"N/A":responseTime+" ms";
+        return isNaN(Number(responseTime))?"N/A":responseTime+" ms";
     },
 
-    getData: function(key){
+    getData: function(key?: string): MetricsData {
         if(key){
-            var filteredData = {series:{}};
+            var filteredData: MetricsData = {series:{}};
             Object.keys(this.data.series).map( s => {
                 filteredData.series[s] = {};
                 if(this.data.series[s][key]){
@@ -218,7 +221,7 @@ const metrics = {
         }
     },
 
-    startDataUpdater: function(){
+    startDataUpdater: function(): void {
         setInterval(function(){
             try{
                 metrics.prepareDate();
@@ -235,4 +238,4 @@ for(var i=0;i<30;i++){
     metrics.prepareDate(dt);
 }
 
-module.exports = metrics;
+export default metrics;

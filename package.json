@@ -2,16 +2,16 @@
   "name": "chupim",
   "version": "0.1.6",
   "description": "A pipeline builder to compose APIs",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
-  "devDependencies": {
-    "tape": "^4.9.2",
-    "@randomgoods/tap-spec": "^5.0.1"
-  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "tape tests/**/*.js | node_modules/@randomgoods/tap-spec/bin/cmd.js"
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "repository": {
     "type": "git",
@@ -28,5 +28,14 @@
   "bugs": {
     "url": "https://github.com/baliberdin/chupim/issues"
   },
-  "homepage": "https://github.com/baliberdin/chupim#readme"
+  "homepage": "https://github.com/baliberdin/chupim#readme",
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  }
 }

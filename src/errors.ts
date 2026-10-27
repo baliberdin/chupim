@@ -12,16 +12,18 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-   
+
 */
 
 
-const errors = {
-  maxLogLines: (process.env['MAX_LOGS_LINES'] || 10000)*1,
-  errorsLog: [],
+import type { ErrorLogEntry, Stage } from './types';
 
-  loggedKeys: function() {
-    let keys = [];
+const errors = {
+  maxLogLines: Number(process.env['MAX_LOGS_LINES'] || 10000),
+  errorsLog: [] as ErrorLogEntry[],
+
+  loggedKeys: function(): string[] {
+    let keys: string[] = [];
     this.errorsLog.forEach( e => {
       if(e.key && !keys.includes(e.key)){
         keys.push(e.key);
@@ -31,41 +33,29 @@ const errors = {
     return keys;
   },
 
-  filteredByKey: function(key){
+  filteredByKey: function(key: string): ErrorLogEntry[] {
     return this.errorsLog.filter(e => e.key == key);
   },
 
-  _addErrorLog: function(error){
+  _addErrorLog: function(error: ErrorLogEntry): void {
     if(this.errorsLog.length >= this.maxLogLines){
       this.errorsLog.shift();
     }
     this.errorsLog.push(error);
   },
 
-  addStageError: function(stage, e){
-    let error = {};
-    if(e.constructor === TypeError){
-      error = {
-        name:error.name,
-        message:error.message, 
-        filename:error.filename,
-        column:error.columnNumber, 
-        stack:error.stack};
-    }else{
-      error = e;
-    }
-
-    this._addErrorLog({key:stage.key(), error:error, date:new Date()});
+  addStageError: function(stage: Stage, e: any): void {
+    this.addError(stage.key(), e);
   },
 
-  addError: function(key, e){
-    let error = {};
+  addError: function(key: string, e: any): void {
+    let error: unknown = {};
     if(e.constructor === TypeError){
       error = {
         name:e.name,
         message:e.message, 
-        filename:e.filename,
-        column:e.columnNumber, 
+        filename:(e as any).filename,
+        column:(e as any).columnNumber, 
         stack:e.stack};
     }else{
       error = e;
@@ -75,4 +65,4 @@ const errors = {
   }
 }
 
-module.exports = errors;
+export default errors;
