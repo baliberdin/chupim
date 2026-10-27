@@ -26,27 +26,31 @@ const circuitbreaker = {
     return async context => {
       return new Promise((resolve, reject) => {
         var timeLimit = timeout || 1000;
-        let rejected = false;
-        let resolved = false;
+        let settled = false;
 
-        setTimeout(
+        const timer = setTimeout(
           () => {
-            if(!resolved){
-              rejected = true;
-              metrics.addCircuitBreak(serviceName);
-              reject(new Error(`Timeout on: ${serviceName}.`))
-            }
+            settled = true;
+            metrics.addCircuitBreak(serviceName);
+            reject(new Error(`Timeout on: ${serviceName}.`))
           },
           timeLimit
         );
         fn(context)
           .then(r => {
-            if(!rejected){
-              resolved = true;
+            if(!settled){
+              settled = true;
+              clearTimeout(timer);
               resolve(r);
             }
           })
-          .catch(e => reject(e));
+          .catch(e => {
+            if(!settled){
+              settled = true;
+              clearTimeout(timer);
+              reject(e);
+            }
+          });
       });
     };
   },
@@ -55,28 +59,32 @@ const circuitbreaker = {
     return async context => {
       return new Promise((resolve, reject) => {
         var timeLimit = timeout || 1000;
-        let rejected = false;
-        let resolved = false;
+        let settled = false;
 
-        setTimeout(
+        const timer = setTimeout(
           () => {
-            if(!resolved){
-              rejected = true;
-              metrics.addCircuitBreak(serviceName);
-              reject(new Error(`[Circuit Breaker] Exceeded time limit (${timeLimit}): ${serviceName}.`));
-            }
+            settled = true;
+            metrics.addCircuitBreak(serviceName);
+            reject(new Error(`[Circuit Breaker] Exceeded time limit (${timeLimit}): ${serviceName}.`));
           },
           timeLimit
         );
 
         fn(Object.create(context) as Context)
           .then(r => {
-            if(!rejected){
-              resolved = true;
+            if(!settled){
+              settled = true;
+              clearTimeout(timer);
               resolve(Object.assign(context,r));
             }
           })
-          .catch(e => reject(e));
+          .catch(e => {
+            if(!settled){
+              settled = true;
+              clearTimeout(timer);
+              reject(e);
+            }
+          });
       }).catch( e => {
         errors.addError(serviceName, e);
         return fallbackFunction(context, e);

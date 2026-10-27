@@ -96,3 +96,55 @@ test('Should fallback a stage if it spent more than 200 milliseconds', async () 
   expect(r, 'Has pipeline result').toBeDefined();
   expect(r.fallback, 'Result has a fallback information').toBe('ok');
 });
+
+const circuitBreaks = (key: string) => Object.values(chupim.metrics.data.series)
+  .reduce((n, s) => n + (s[key]?.circuit_breaks ?? 0), 0);
+
+chupim.registerStage({
+  prefix: pkg,
+  name: 'fastError',
+  fn: async () => {
+    throw new Error('fast error');
+  },
+  circuitbreaker: {
+    enabled: true,
+    timeout: 50,
+    action: 0
+  }
+});
+
+chupim.registerStage({
+  prefix: pkg,
+  name: 'fastErrorFallback',
+  fn: async () => {
+    throw new Error('fast error');
+  },
+  circuitbreaker: {
+    enabled: true,
+    timeout: 50,
+    action: 1,
+    fn: `${pkg}.fallback`
+  }
+});
+
+test('Should not count a circuit break when a stage fails before the timeout', async () => {
+  const pipeline = chupim.registerComponent({id: 'circuit-breaker-test3', stages:[`${pkg}.fastError`]});
+
+  await expect(pipeline.fn(chupim.createContext())).rejects.toThrow('fast error');
+  await new Promise(resolve => setTimeout(resolve, 100));
+  expect(circuitBreaks(`${pkg}.fastError`)).toBe(0);
+});
+
+test('Should fallback without counting a circuit break when a stage fails before the timeout', async () => {
+  const pipeline = chupim.registerComponent({id: 'circuit-breaker-test4', stages:[`${pkg}.fastErrorFallback`]});
+
+  const r = await pipeline.fn(chupim.createContext());
+  expect(r.fallback).toBe('ok');
+  await new Promise(resolve => setTimeout(resolve, 100));
+  expect(circuitBreaks(`${pkg}.fastErrorFallback`)).toBe(0);
+});
+
+test('Should count a circuit break when a stage exceeds the timeout', () => {
+  expect(circuitBreaks(`${pkg}.stage2`)).toBe(1);
+  expect(circuitBreaks(`${pkg}.stage3`)).toBe(1);
+});
