@@ -143,3 +143,30 @@ test('Should throw a clear error when fallback stage does not exist on a known p
         circuitbreaker: { enabled: true, action: 1, fn: 'testPipeline.doesNotExist' }
     })).toThrow('Invalid Fallback Function: [testPipeline.doesNotExist]');
 });
+
+test('Should execute stages with point character on prefix inside a component', async () => {
+    chupim.registerStage({prefix: 'com.chupim.component', name: 'stage', fn: async (c) => { c.dotted = true; return c; }});
+    const component = chupim.registerComponent({id: 'dottedPrefix', stages: ['com.chupim.component.stage']});
+
+    const result = await component.fn(chupim.createContext());
+    expect(result.dotted).toBe(true);
+});
+
+test('Should use a fallback stage with point character on prefix', () => {
+    chupim.registerStage({prefix: 'com.chupim.fallback', name: 'returnContext', fn: async (c) => c});
+
+    expect(() => chupim.registerStage({
+        prefix: 'testPipeline',
+        name: 'withDottedFallback',
+        fn: async (c) => c,
+        circuitbreaker: { enabled: true, action: 1, fn: 'com.chupim.fallback.returnContext' }
+    })).not.toThrow();
+});
+
+test('Should find stages with point character on stage name', () => {
+    chupim.registerStage({prefix: 'plain', name: 'dotted.name', fn: async (c) => c});
+
+    expect(chupim.stages.find('plain.dotted.name')?.name).toBe('dotted.name');
+    expect(chupim.stages.find('plain.doesNotExist')).toBeUndefined();
+    expect(chupim.stages.find('noDots')).toBeUndefined();
+});

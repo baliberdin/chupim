@@ -23,10 +23,19 @@ const stage = {
 
 	container: {} as Record<string, Record<string, Stage>>,
 	
+	// Finds a stage by its full name (prefix.name). Prefixes may contain dots,
+	// so every dot is tried as separator, starting from the first one.
+	find: function(sName: string): Stage | undefined {
+    for(let i = sName.indexOf("."); i > -1; i = sName.indexOf(".", i+1)){
+      let stage = this.container[sName.substring(0,i)]?.[sName.substring(i+1)];
+      if(stage) return stage;
+    }
+
+    return;
+  },
+
 	getStageFunction: function(sName: string): StageFunction | undefined {
-    let type = sName.substring(0,sName.indexOf("."));
-    let stageName = sName.substring(sName.indexOf(".")+1,sName.length);
-    return this.container[type]?.[stageName]?.fn;
+    return this.find(sName)?.fn;
   },
 
 	register: function(stage: StageDefinition): Stage {

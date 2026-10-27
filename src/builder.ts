@@ -29,11 +29,10 @@ const builder = {
 
         if(stageNamesList != undefined && stageNamesList.constructor === Array){
             stageNamesList.map(s => {
-                var type = s.substring(0,s.indexOf("."));
-                var stageName = s.substring(s.indexOf(".")+1,s.length);
+                var stage = stages.find(s);
 
-                if(stages.container[type] != undefined && stages.container[type][stageName] != undefined){
-                    stageList.push(stages.container[type][stageName]);
+                if(stage != undefined){
+                    stageList.push(stage);
                 }
             });
         }
