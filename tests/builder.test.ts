@@ -107,3 +107,41 @@ test('Should create a correct pipeline structure for a MultiParallel pipeline', 
     const group = parallel.pipelines[0] as GroupPipelineObject;
     expect(group.pipelines.map(p => p.type)).toEqual(['serial', 'parallel', 'serial']);
 });
+
+for (const name of ['a', 'b', 'c', 'd']) {
+    chupim.registerStage({
+        prefix: 'order',
+        name: name,
+        fn: async (c) => {
+            c.executed = [...(c.executed || []), name];
+            return c;
+        }
+    });
+}
+
+test('Should execute a parallel branch made only of a parallel block', async () => {
+    const component = chupim.registerComponent({
+        id: 'onlyParallelBranch',
+        stages: [[ [[['order.a'], ['order.b']]], ['order.c'] ]]
+    });
+
+    const result = await component.fn(chupim.createContext());
+    expect([...result.executed].sort()).toEqual(['a', 'b', 'c']);
+});
+
+test('Should execute in sequence the parallel blocks of a parallel branch', async () => {
+    const pipeline = chupim.builder.stageConfigToPipelineObjects([[ [[['order.a'], ['order.b']], [['order.c']]], ['order.d'] ]]);
+    const parallel = pipeline[0] as ParallelPipelineObject;
+    expect(parallel.pipelines.map(p => p.type), 'Each branch is a single pipeline').toEqual(['group', 'serial']);
+
+    const component = chupim.registerComponent({
+        id: 'sequenceOfParallelBlocks',
+        stages: [[ [[['order.a'], ['order.b']], [['order.c']]], ['order.d'] ]]
+    });
+
+    const result = await component.fn(chupim.createContext());
+    const executed: string[] = result.executed;
+    expect([...executed].sort()).toEqual(['a', 'b', 'c', 'd']);
+    expect(executed.indexOf('c'), 'c runs after a').toBeGreaterThan(executed.indexOf('a'));
+    expect(executed.indexOf('c'), 'c runs after b').toBeGreaterThan(executed.indexOf('b'));
+});

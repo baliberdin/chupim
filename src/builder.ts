@@ -104,7 +104,14 @@ const builder = {
             var parallelPipelines: PipelineObject[] = [];
             for(var j=0; j<s.length; j++){
               var a = s[j];
-              parallelPipelines.push(...this.stageConfigToPipelineObjects(a,[]));
+              var branch = this.stageConfigToPipelineObjects(a,[]);
+              // Each branch must be a single pipeline. A branch made only of
+              // parallel blocks yields many objects that must run in sequence.
+              if(branch.length > 1){
+                parallelPipelines.push({type:"group", pipelines:branch});
+              }else{
+                parallelPipelines.push(...branch);
+              }
             }
 
             pipelines.push({type:"parallel",pipelines:parallelPipelines});
@@ -143,10 +150,10 @@ const builder = {
           fn = async (c) => p.pipeline(await faux(c));
         }else if(p.type == 'parallel'){
           var pipelines = p.pipelines.map( pp => {
-            if(pp.type == 'group'){
-              return this.pipelineObjectsToComponent(pp.pipelines);
+            if(pp.type == 'serial'){
+              return pp.pipeline;
             }else{
-              return (pp as any).pipeline as PipelineFunction;
+              return this.pipelineObjectsToComponent([pp]);
             }
           });
           
