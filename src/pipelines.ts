@@ -36,14 +36,10 @@ const stageWrapper = async (context: Context, stage: Stage | PipelineFunction): 
 	var startTime = new Date();
 	var elapsedTime: number;
 	var result;
-	var error: string | undefined;
 
 	try {
-		//let c = Object.create(context);
 		result = await s.fn(context);
 	}catch(e){
-		error = String(e);
-		result = context;
 		elapsedTime = new Date().getTime() - startTime.getTime();
 		metrics.addHit(s.key(), elapsedTime,2);
 		errors.addStageError(s,e);
@@ -53,20 +49,14 @@ const stageWrapper = async (context: Context, stage: Stage | PipelineFunction): 
 	elapsedTime = new Date().getTime() - startTime.getTime();
 	metrics.addMetric(s.key(), elapsedTime);
   
-	if((context._chupim_.metadata.stages_info as any)[s.name] == undefined){
-		var stageMetadata: StageInfo = {
-      name:s.name, 
-      prefix:s.prefix, 
-      elapsedTime: elapsedTime, 
-      execution_indx:context._chupim_.metadata.executed_stages++
-    };
+	var stageMetadata: StageInfo = {
+		name:s.name, 
+		prefix:s.prefix, 
+		elapsedTime: elapsedTime, 
+		execution_indx:context._chupim_.metadata.executed_stages++
+	};
 
-		if(error != undefined){
-			stageMetadata.error = error;
-		}
-
-		context._chupim_.metadata.stages_info.push(stageMetadata);
-	}
+	context._chupim_.metadata.stages_info.push(stageMetadata);
 	
 	return result;
 };
@@ -100,12 +90,8 @@ const pipeline = {
 		if(pipelines.length == 0){
 			return joinFunction(context);
 		}else{
-			let results: any[] = [];
-			let pipelinesPromises = pipelines.map( pipeline => {
-				return pipeline(context).then( result => results.push(result) );
-			});	
-
-			await Promise.all(pipelinesPromises);
+			// Results keep the declared order of pipelines, not the completion order
+			let results = await Promise.all(pipelines.map( pipeline => pipeline(context) ));
 			return joinFunction(results);
 		}
 	}

@@ -77,3 +77,11 @@ test('Should not fail when a component has only unknown stages.', async () => {
     expect(actual).toBe(context);
     expect(actual._chupim_.metadata.stages_info).toHaveLength(0);
 });
+
+test('Should join parallel results in the declared order of pipelines.', async () => {
+    const slow = async () => { await new Promise(r => setTimeout(r, 30)); return {winner: 'slow'}; };
+    const fast = async () => ({winner: 'fast'});
+
+    const actual = await chupim.pipelines.parallelPipeline({}, (values) => values.map(v => v.winner), slow, fast);
+    expect(actual).toEqual(['slow', 'fast']);
+});

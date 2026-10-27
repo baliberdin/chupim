@@ -80,3 +80,21 @@ test('Pipeline should throw exception when first inner stage rise an error', asy
 
   await expect(pipeline.fn(context)).rejects.toThrow('Default error.');
 });
+
+test('Should keep registered components indexed by id', () => {
+  const component = chupim.registerComponent({id: 'indexed', stages: ['test.stage1']});
+
+  expect(Object.keys(chupim.components)).toContain('indexed');
+  expect(chupim.getPipelineComponent('indexed')).toBe(component);
+
+  chupim.removePipelineComponent('indexed');
+  expect(chupim.getPipelineComponent('indexed')).toBeUndefined();
+});
+
+test('Should get the current minute when asking for zero past minutes', () => {
+  const now = new Date();
+  now.setSeconds(0, 0);
+
+  expect(chupim.metrics.getPast30Minutes(0)).toEqual(now);
+  expect(chupim.metrics.getPast30Minutes().getTime()).toBe(now.getTime() - 30*60*1000);
+});

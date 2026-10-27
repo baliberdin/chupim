@@ -28,8 +28,7 @@ export type * from './types';
 
 export { pipelines, builder, stages, graph, metrics, errors };
 
-// Kept as an array (like the original API), but used as a map indexed by component id.
-export const components = [] as unknown as Record<string, Component>;
+export const components: Record<string, Component> = {};
 
 export function createContext(): Context {
   var context: Context = {

@@ -20,7 +20,6 @@ export interface StageInfo {
   prefix: string;
   elapsedTime: number;
   execution_indx: number;
-  error?: string;
 }
 
 export interface ChupimMetadata {

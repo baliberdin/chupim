@@ -143,7 +143,7 @@ const metrics = {
     },
 
     getPast30Minutes: function(m?: number): Date {
-        const minutes = m || 30;
+        const minutes = m ?? 30;
         var dt = new Date();
         dt.setMilliseconds(0);
         dt.setSeconds(0);
