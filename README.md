@@ -1,220 +1,236 @@
-# Chupim 
+# Chupim
 [![CI](https://github.com/baliberdin/chupim/actions/workflows/ci.yml/badge.svg)](https://github.com/baliberdin/chupim/actions/workflows/ci.yml)
-- [Chupim](#chupim)
-    - [Overview](#overview)
-    - [Simple Example](#simple-example)
-  - [Advanced Stages Arrangement](#advanced-stages-arrangement)
-  - [Circuit Breaker](#circuit-breaker)
 
+Chupim is a Node.js library for building pipelines of async functions. You
+write small functions, called **stages**, and arrange them into **pipelines**
+that run stages in sequence, in parallel or in any combination of both.
 
-### Overview
-Core module for chupim-web project. Please visit [Chupim Web Project](https://github.com/baliberdin/chupim-web) a Web UI with diagrams to administer chupim pipelines.
+It was designed for I/O bound work, such as composing an API from other APIs
+and services: each stage calls one service, and the pipeline puts the results
+together. Stages that call slow or unreliable services can be protected with a
+circuit breaker.
 
-Chupim is a javascript **Pipeline Builder** (NodeJS module) that you can define and organize your flow in a simple way, just by connecting the stages. **Stages** are asynchronous functions that you must implement to do something. Each stage is connected to another, so the output of the first stage is the input of the second stage and so on ...
-The first entry to the first stage is something we call context.
-**Context** is just a JSON object that doesn't have fixed schema. You can put almost anything into it.
-The chupim allows you to build from a simple serial pipeline to parallel pipelines and mixed pipelines
-Let's see some examples of how to use chupim on a simple pipeline to transform text.
+Chupim is the core of [Chupim Web](https://github.com/baliberdin/chupim-web),
+a server with a web interface to create stages and draw pipelines in the
+browser and publish them as HTTP endpoints.
 
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [Arranging stages](#arranging-stages)
+- [Circuit breaker](#circuit-breaker)
+- [Errors and metrics](#errors-and-metrics)
+- [TypeScript](#typescript)
+- [Development](#development)
 
-### Simple Example
-Create a new folder
+## Installation
+Chupim requires Node.js 22 or later.
+
 ```shell
-mkdir chupim-test
-cd chupim-test
+npm install chupim
 ```
 
-Initialize npm. Run this command and answer the questions
-```shell
-npm init
-```
+## Quick start
+This pipeline turns a text to lowercase and then splits it into sentences.
 
-Installing chupim
-```shell
-npm install -s chupim
-```
-
-Create a new file test.js
 ```javascript
-// Import Chupim module
 const chupim = require('chupim');
 
-// Register new stage
+// Stages are async functions that receive the context and return it
 chupim.registerStage({
-  prefix: 'myPackage',
-  name: 'myLowercaseStage', 
+  prefix: 'text',
+  name: 'lowercase',
   fn: async (context) => {
     context.text = context.text.toLowerCase();
-    // To continue and do not stop pipeline you need to return context or a new Promise 
     return context;
   }
 });
 
-// Register another stage to split in paragraph
 chupim.registerStage({
-  prefix: 'myPackage',
-  name: 'mySplitParagraphStage', 
+  prefix: 'text',
+  name: 'splitSentences',
   fn: async (context) => {
-    context.paragraphs = context.text.split(". ");
+    context.sentences = context.text.split('. ');
     return context;
   }
 });
 
-// Register a new component
-const component = chupim.registerComponent({
-  id: 'parse_text_test',
-  name:'Parse Text Test',
-  stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
+// A pipeline references its stages by prefix.name
+const pipeline = chupim.registerComponent({
+  id: 'parse-text',
+  name: 'Parse text',
+  stages: ['text.lowercase', 'text.splitSentences']
 });
 
-// Creates an empty context
-var context = chupim.createContext();
-// Set chupim to debug mode. It will keep metadata information on context object.
-context._chupim_.params.debug = true;
+const context = chupim.createContext();
+context.text = 'Hello World. Chupim Builds Pipelines.';
 
-// Put the text on context
-context.text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, "+
-  "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "+
-  "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi "+
-  "ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit "+
-  "in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint "+
-  "occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-
-// Run component function.
-// Result is the context object modified by pipeline stages
-component.fn(context).then( result => {
-  console.log(result);
-});
+pipeline.fn(context).then(result => console.log(result));
 ```
-Running
+
 ```shell
-node test.js
+node index.js
 ```
 
-You will see something like that:
 ```javascript
-{ _chupim_: 
-   { params: { debug: true },
-     metadata: { stages_info: [Array], stage: 2, totalTime: 0 } },
-  text: 'lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-  paragraphs: 
-   [ 'lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua',
-     'ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat',
-     'duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur',
-     'excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.' ] }
-     
+{
+  text: 'hello world. chupim builds pipelines.',
+  sentences: [ 'hello world', 'chupim builds pipelines.' ]
+}
 ```
 
-The object ***_chupim_*** is a pipeline metadata, text and paragraphs are data created by pipeline stages.
+## How it works
+**Context.** The object that goes through the pipeline. It has no fixed
+structure: each stage reads what it needs from it and adds its results. The
+context returned by the last stage is the result of the pipeline. Create it
+with `chupim.createContext()`.
 
+**Stages.** Async functions registered with `chupim.registerStage()`. Each one
+receives the context and must return it, so it can be passed to the next stage.
+To fail the pipeline, a stage throws an error. A stage is identified by its
+`prefix` and `name`, written as `prefix.name`; the prefix only groups related
+stages, like a package name.
 
-## Advanced Stages Arrangement 
-To construct advanced pipelines with Chupim we need to understand how chupim works with stages arrangements.
-Every stage arrangement on chupim is defined by property [stages] on config of pipeline component.
+**Pipelines.** Registered with `chupim.registerComponent()`, which takes an
+`id`, an optional `name` and the arrangement of `stages`. It returns an object
+whose `fn(context)` runs the pipeline and returns a promise with the result.
+Stages are looked up when the pipeline runs, so they can be registered or
+replaced after the pipeline.
+
+**Debug metadata.** `createContext()` adds a `_chupim_` property to the context.
+It is removed from the result unless debug mode is on:
 
 ```javascript
-let config = {
-  id: 'parse_text_test',
-  name:'Parse Text Test',
-  stages:['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']
-};
-const component = chupim.registerComponent(config);
+const context = chupim.createContext();
+context._chupim_.params.debug = true;
 ```
 
-On the example above there are two stages in serial mode which is represented by an unidimensional array. 
-***['myPackage.myLowercaseStage', 'myPackage.mySplitParagraphStage']*** 
-
-To transform the same example to an parallel pipeline just switch from unidimensional array to a matrix
+With debug mode on, the result keeps the stages that ran, in order, and how
+long each one took:
 
 ```javascript
-...
-  // Pipeline with two stages in parallel
-  stages:[
-    [
-      ['myPackage.myLowercaseStage'], 
-      ['myPackage.mySplitParagraphStage']
-    ]
+{
+  _chupim_: {
+    params: { debug: true },
+    metadata: {
+      stages_info: [
+        { name: 'lowercase', prefix: 'text', elapsedTime: 0, execution_indx: 0 },
+        { name: 'splitSentences', prefix: 'text', elapsedTime: 0, execution_indx: 1 }
+      ],
+      executed_stages: 2,
+      totalTime: 0
+    }
+  },
+  text: 'hello world. chupim builds pipelines.',
+  sentences: [ 'hello world', 'chupim builds pipelines.' ]
+}
+```
+
+## Arranging stages
+The `stages` property of a pipeline defines the order in which its stages run.
+
+**In sequence.** A list of stage names runs one stage after the other:
+
+```javascript
+stages: ['text.lowercase', 'text.splitSentences']
+```
+
+**In parallel.** A list of lists inside the arrangement is a parallel block.
+Each inner list is a branch, and all branches run at the same time:
+
+```javascript
+//         ┌→ splitSentences ┐
+// input ──┤                 ├→ output
+//         └→ countWords ────┘
+stages: [
+  [
+    ['text.splitSentences'],
+    ['text.countWords']
   ]
-...
-
+]
 ```
 
-The first element of first array is a bidimensional array, which means that each line is a single serial pipeline, but each one needs to be executed at the same time.
+All branches receive the same context. When they finish, their results are
+merged into a single context, in the order the branches were declared.
+
+**Combined.** Sequences and parallel blocks can be combined freely, and a
+branch can have many stages and its own parallel blocks:
 
 ```javascript
-...
-  /* Another example
-   Pipeline with two serial pipelines in parallel
-  
-             -> A -> B -> C
-       in ->´              `->out
-            `-> D -> E -> F´
-  */
-  stages:[
-    [
-      ['package.stageA', 'package.stageB', 'package.stageC',], 
-      ['package.stageD', 'package.stageE', 'package.stageF',]
-    ]
-  ]
-...
-
-...
-  /* Another example
-   Pipeline with two serial pipelines in parallel and last one serial 
-  
-             -> A -> B -> C
-       in ->´              `-> G -> H -> I -> out
-            `-> D -> E -> F´
-  */
-  stages:[
-    [
-      ['package.stageA', 'package.stageB', 'package.stageC',], 
-      ['package.stageD', 'package.stageE', 'package.stageF',]
-    ],
-    'package.stageG',
-    'package.stageH',
-    'package.stageI'
-  ]
-...
-
+//         ┌→ A → B → C ┐
+// input ──┤            ├→ G → H → output
+//         └→ D → E → F ┘
+stages: [
+  [
+    ['pkg.A', 'pkg.B', 'pkg.C'],
+    ['pkg.D', 'pkg.E', 'pkg.F']
+  ],
+  'pkg.G',
+  'pkg.H'
+]
 ```
-If you thought that it is hard or confusing, see the upper-level project ([Chupim Web](https://github.com/baliberdin/chupim-web)), and do that with just a few clicks on the UI.
 
-## Circuit Breaker
-Chupim is designed to create IO Bound pipelines. It means that stages should be a Service Facade to request data from another system, and of course, it could fail sometimes.
-To protect your pipeline, The Chupim has a Circuit Breaker system.
-This system operates with two triggers, timeout, and exceptions. If a stage spends more time than it should or throws an exception, the circuit breaker executes an action. These actions could be a Fallback Function or throw that error to upper layers of the system.
-If the stage is optional, you could set a simple Fallback function to keep pipeline flow goes on. If not, you can throw the error to stop the pipeline.
+In [Chupim Web](https://github.com/baliberdin/chupim-web) you can draw these
+arrangements as a graph instead of writing them.
+
+## Circuit breaker
+Stages that call other systems can fail or take too long. The circuit breaker
+limits how long a stage can run and decides what happens when it times out or
+throws an error:
+
+- **Throw the error** (`action: 0`): the pipeline fails. Use it for stages the
+  result cannot do without.
+- **Run a fallback stage** (`action: 1`): another stage runs in place of the
+  one that failed, and the pipeline goes on. Use it for optional stages.
 
 ```javascript
-
-// Creates a Fallback Stage to set on circuitbreaker
+// Fallback that leaves the context as it is
 chupim.registerStage({
   prefix: 'Fallback',
-  name: 'ReturnContext', 
-  fn: async (context) => {
-    // Simple fallback function. Just Returns the context.
-    return context;
-  }
+  name: 'returnContext',
+  fn: async (context) => context
 });
 
-// Creates Stage with circuit breaker configuration
 chupim.registerStage({
-  prefix: 'myPackage',
-  name: 'myOptionalStage', 
+  prefix: 'news',
+  name: 'fetchHeadlines',
   fn: async (context) => {
-    // here, code to facade to another optional system
-    // eg: Request RSS news from BBC.
+    const response = await fetch('https://news.example.com/headlines');
+    context.headlines = await response.json();
     return context;
   },
   circuitbreaker: {
     enabled: true,
-    timeout: 200, // <- Time in miliseconds
-    action: 1, // 0-Throw Error, 1-Fallback Function
-    fn: 'Fallback.ReturnContext' // <- Fallback stage created before
+    timeout: 200,                // milliseconds, 1000 by default
+    action: 1,                   // 0: throw the error, 1: run the fallback stage
+    fn: 'Fallback.returnContext' // fallback stage, registered before this one
   }
 });
 ```
+
+The fallback receives the context and the error. With a fallback, the stage
+works on a copy of the context, so the changes of a stage that fails or times
+out are discarded. Timeouts are counted as circuit breaks in the metrics, and
+errors are logged under the stage name.
+
+## Errors and metrics
+Chupim keeps an in-memory log of errors and metrics for every stage and
+pipeline:
+
+```javascript
+// Errors thrown by a stage, by its prefix.name
+chupim.errors.filteredByKey('news.fetchHeadlines');
+
+// Requests, errors, circuit breaks and response times per minute
+chupim.metrics.getData('news.fetchHeadlines');
+
+// Keeps only the last 30 minutes of metrics, cleaning up every 5 seconds
+chupim.metrics.startDataUpdater();
+```
+
+The error log keeps the last 10,000 errors. Set the `MAX_LOGS_LINES`
+environment variable to change this limit.
+
 ## TypeScript
 Chupim is written in TypeScript and ships its type definitions.
 
@@ -223,8 +239,8 @@ import * as chupim from 'chupim';
 import type { Context } from 'chupim';
 
 chupim.registerStage({
-  prefix: 'myPackage',
-  name: 'myLowercaseStage',
+  prefix: 'text',
+  name: 'lowercase',
   fn: async (context: Context) => {
     context.text = context.text.toLowerCase();
     return context;
@@ -233,10 +249,13 @@ chupim.registerStage({
 ```
 
 ## Development
-Node version is pinned in `.tool-versions` (asdf).
+The Node.js version is pinned in `.tool-versions` (asdf).
 
 ```shell
-make install    # npm ci
-make test       # typecheck + vitest
-make build      # compiles src/ to dist/
+make install    # install dependencies (npm ci)
+make test       # type check and run the tests (Vitest)
+make build      # compile src/ to dist/
 ```
+
+## License
+[Apache 2.0](LICENSE.txt)
