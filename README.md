@@ -1,5 +1,5 @@
 # Chupim 
-![Master Build](https://travis-ci.org/baliberdin/chupim.svg?branch=master)
+[![CI](https://github.com/baliberdin/chupim/actions/workflows/ci.yml/badge.svg)](https://github.com/baliberdin/chupim/actions/workflows/ci.yml)
 - [Chupim](#chupim)
     - [Overview](#overview)
     - [Simple Example](#simple-example)
