@@ -45,19 +45,7 @@ const errors = {
   },
 
   addStageError: function(stage: Stage, e: any): void {
-    let error: any = {};
-    if(e.constructor === TypeError){
-      error = {
-        name:error.name,
-        message:error.message, 
-        filename:error.filename,
-        column:error.columnNumber, 
-        stack:error.stack};
-    }else{
-      error = e;
-    }
-
-    this._addErrorLog({key:stage.key(), error:error, date:new Date()});
+    this.addError(stage.key(), e);
   },
 
   addError: function(key: string, e: any): void {

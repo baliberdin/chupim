@@ -48,3 +48,26 @@ test('Should register error under a stage key if stage throw exception inside a 
   expect(errorLog, 'Has error log under a stage key').toHaveLength(1);
   expect(errorLog[0].error, 'Has error log').toBeDefined();
 });
+
+test('Should log TypeError details when a stage throws a TypeError', async () => {
+  chupim.registerStage({
+    prefix: 'errorPipeline',
+    name: 'typeError',
+    fn: async (c) => {
+      return c.missing.prop;
+    }
+  });
+
+  const comp = chupim.registerComponent({
+    id:'typeErrorComponent',
+    stages: ['errorPipeline.typeError']
+  });
+  await expect(comp.fn(chupim.createContext())).rejects.toThrow(TypeError);
+
+  const errorLog = chupim.errors.filteredByKey('errorPipeline.typeError');
+  const error = errorLog[0].error as {name: string, message: string, stack: string};
+
+  expect(error.name).toBe('TypeError');
+  expect(error.message).toMatch(/Cannot read properties of undefined/);
+  expect(error.stack).toBeDefined();
+});
