@@ -73,11 +73,16 @@ const stageWrapper = async (context: Context, stage: Stage | PipelineFunction): 
 
 const pipeline = {
 	serialPipeline: async (context: any, ...stages: Stage[]): Promise<any> => {
+		// Happens when no configured stage name was found on the container
+		if(stages.length == 0){
+			return context;
+		}
+
 		if(stages.length == 1){
 			return stageWrapper(context,stages[0]);
 		}
 
-    var fn: PipelineFunction = stages.length == 0? context: (stages as Array<Stage | PipelineFunction>)
+    var fn: PipelineFunction = (stages as Array<Stage | PipelineFunction>)
       .reduce( (f1,f2) => {
         if(f1.constructor.name == 'Object'){
           return async (q: any) => stageWrapper(q,f1)

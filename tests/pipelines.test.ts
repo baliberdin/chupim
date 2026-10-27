@@ -60,3 +60,20 @@ test('Should wrap pipeline stages when serial pipeline has three stages.', async
     expect(actual._chupim_.metadata.stages_info, 'Has three stage info').toHaveLength(3);
     expect(actual._chupim_.metadata.stages_info.map((s: {name: string}) => s.name)).toEqual(['stage1', 'stage2', 'stage3']);
 });
+
+test('Should return the context when serial pipeline has no stages.', async () => {
+    const context = chupim.createContext();
+    const actual = await chupim.pipelines.serialPipeline(context);
+
+    expect(actual).toBe(context);
+});
+
+test('Should not fail when a component has only unknown stages.', async () => {
+    const context = chupim.createContext();
+    context._chupim_.params.debug = true;
+    const component = chupim.registerComponent({id: 'unknownStages', stages: ['testPipeline.doesNotExist']});
+
+    const actual = await component.fn(context);
+    expect(actual).toBe(context);
+    expect(actual._chupim_.metadata.stages_info).toHaveLength(0);
+});
