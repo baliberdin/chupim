@@ -258,12 +258,19 @@ make build      # compile src/ to dist/
 ```
 
 To release a new version, bump it and push the tag. The
-[Publish](.github/workflows/publish.yml) workflow tests, builds and publishes
-the package to npm:
+[Publish](.github/workflows/publish.yml) workflow tests and builds the package
+and stages it on npm:
 
 ```shell
 npm version minor        # or major / patch: updates package.json and creates the tag
 git push --follow-tags
+```
+
+Staged versions are not public until a maintainer approves them with 2FA:
+
+```shell
+npm stage list chupim
+npm stage approve <stage-id>
 ```
 
 ## License
